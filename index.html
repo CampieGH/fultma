@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Фул.тьма - Новости</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -14,96 +15,185 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: white;
-            min-height: 100vh;
+            background: #ffffff;
+            color: #1a1a1a;
+            line-height: 1.6;
         }
 
         .container {
             max-width: 100%;
-            padding: 20px;
+            padding: 0;
         }
 
+        /* Header */
         .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .logo {
-            font-size: 32px;
-            font-weight: bold;
-            background: linear-gradient(45deg, #ff6b6b, #ffa500);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-        }
-
-        .tagline {
-            color: #8899a6;
-            font-size: 16px;
-        }
-
-        .news-grid {
-            display: grid;
-            gap: 20px;
-            margin-bottom: 80px;
-        }
-
-        .news-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255,255,255,0.1);
+            background: #ffffff;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
             backdrop-filter: blur(10px);
         }
 
-        .news-card:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .news-category {
-            display: inline-block;
-            background: linear-gradient(45deg, #ff6b6b, #ffa500);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+        .logo {
+            font-size: 24px;
             font-weight: bold;
-            margin-bottom: 10px;
+            color: #1a1a1a;
         }
 
-        .news-title {
+        .logo-accent {
+            color: #ff4757;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            background: #ffffff;
+            border-bottom: 1px solid #f0f0f0;
+            padding: 0 20px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab {
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #1a1a1a;
+            border-bottom-color: #ff4757;
+        }
+
+        /* News Feed */
+        .news-feed {
+            padding: 20px;
+        }
+
+        /* News Cards */
+        .news-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .news-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .news-card[data-category="technology"] {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .news-card[data-category="culture"] {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .news-card[data-category="science"] {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .news-card[data-category="society"] {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .card-category {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+
+        .card-title {
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 10px;
             line-height: 1.4;
         }
 
-        .news-excerpt {
-            color: #8899a6;
+        .card-excerpt {
             font-size: 14px;
-            line-height: 1.5;
+            opacity: 0.9;
             margin-bottom: 15px;
+            line-height: 1.5;
         }
 
-        .news-meta {
+        .card-meta {
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 12px;
-            color: #667788;
+            opacity: 0.8;
         }
 
-        .news-date {
-            color: #ffa500;
+        .card-date {
+            font-weight: 500;
         }
 
-        /* Статья */
+        .card-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .action-btn:hover {
+            opacity: 1;
+        }
+
+        /* Article View */
         .article {
             display: none;
             position: fixed;
@@ -111,27 +201,34 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: #1a1a2e;
+            background: #ffffff;
             z-index: 1000;
             overflow-y: auto;
-            padding: 20px;
         }
 
         .article-header {
-            margin-bottom: 30px;
+            background: #ffffff;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .article-back {
-            background: rgba(255,255,255,0.1);
+            background: none;
             border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 10px;
+            font-size: 16px;
+            color: #666;
             cursor: pointer;
-            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 8px;
+            padding: 8px 0;
+        }
+
+        .article-content {
+            padding: 20px;
         }
 
         .article-title {
@@ -144,181 +241,236 @@
         .article-meta {
             display: flex;
             gap: 15px;
-            color: #8899a6;
+            color: #666;
             font-size: 14px;
-            margin-bottom: 20px;
-        }
-
-        .article-content {
-            line-height: 1.8;
-            font-size: 16px;
-        }
-
-        .article-content p {
             margin-bottom: 20px;
         }
 
         .article-image {
             width: 100%;
-            border-radius: 10px;
+            border-radius: 12px;
             margin: 20px 0;
         }
 
-        /* Кнопка выхода */
+        .article-text {
+            line-height: 1.8;
+            font-size: 16px;
+        }
+
+        .article-text p {
+            margin-bottom: 20px;
+        }
+
+        /* Exit Button */
         .exit-btn {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            background: #ff4757;
             color: white;
             border: none;
-            padding: 15px 30px;
+            padding: 12px 30px;
             border-radius: 25px;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
             z-index: 100;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
         }
 
         .loading {
             text-align: center;
             padding: 40px;
-            color: #8899a6;
+            color: #666;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Header -->
         <div class="header">
-            <div class="logo">ФУЛ.ТЬМА</div>
-            <div class="tagline">Там, где заканчивается свет</div>
+            <div class="header-content">
+                <div class="logo">ФУЛ<span class="logo-accent">.</span>ТЬМА</div>
+                <div class="header-actions">
+                    <button class="icon-btn"><i class="fas fa-search"></i></button>
+                    <button class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
+                </div>
+            </div>
         </div>
 
-        <div class="news-grid" id="newsGrid">
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="tab active" onclick="switchTab('foryou')">Для вас</button>
+            <button class="tab" onclick="switchTab('popular')">Популярное</button>
+            <button class="tab" onclick="switchTab('trending')">В тренде</button>
+            <button class="tab" onclick="switchTab('following')">Подписки</button>
+        </div>
+
+        <!-- News Feed -->
+        <div class="news-feed" id="newsFeed">
             <div class="loading">Загружаем новости...</div>
         </div>
     </div>
 
-    <!-- Контейнер для статей -->
+    <!-- Article Container -->
     <div id="articleContainer"></div>
 
-    <!-- Кнопка выхода -->
-    <button class="exit-btn" onclick="closeApp()">Выйти из приложения</button>
+    <!-- Exit Button -->
+    <button class="exit-btn" onclick="closeApp()">
+        <i class="fas fa-times"></i> Выйти
+    </button>
 
     <script>
         // Данные новостей
-        const newsData = [
-            {
-                id: 1,
-                category: "ТЕХНОЛОГИИ",
-                title: "Искусственный интеллект научился читать мысли",
-                excerpt: "Новая нейросеть может воссоздавать изображения прямо из мозговой активности человека...",
-                date: "15 дек 2024",
-                image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=400",
-                content: `
-                    <p>Ученые из Стэнфордского университета представили революционную технологию, позволяющую искусственному интеллекту визуализировать мысли человека. Система анализирует сигналы мозга и преобразует их в изображения с поразительной точностью.</p>
-                    
-                    <p>В ходе экспериментов добровольцам показывали различные изображения, а ИИ в реальном времени воссоздавал их на основе данных фМРТ. Результаты превзошли все ожидания — система смогла генерировать узнаваемые образы с точностью до 85%.</p>
-                    
-                    <p>"Это открывает новые горизонты для коммуникации с людьми, потерявшими способность говорить, и может изменить подход к лечению неврологических заболеваний", — заявил руководитель исследования доктор Майкл Чен.</p>
-                `
-            },
-            {
-                id: 2,
-                category: "КУЛЬТУРА",
-                title: "В Москве открылась выставка забытых художников авангарда",
-                excerpt: "Более 200 работ неизвестных гениев русского авангарда впервые представлены публике...",
-                date: "14 дек 2024",
-                image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400",
-                content: `
-                    <p>В Государственной Третьяковской галерее начала работу уникальная выставка "Забытые гении авангарда", на которой представлены работы художников, чьи имена были незаслуженно забыты историей.</p>
-                    
-                    <p>Экспозиция включает более 200 произведений из частных коллекций и музейных запасников. Среди них — картины учеников Малевича и Кандинского, которые долгие годы хранились в архивах.</p>
-                    
-                    <p>"Мы хотим восстановить историческую справедливость и показать, что русский авангард — это не только известные имена, но и десятки талантливых художников, внесших свой вклад в развитие искусства", — отметила куратор выставки Анна Петрова.</p>
-                `
-            },
-            {
-                id: 3,
-                category: "НАУКА",
-                title: "Обнаружена новая форма материи в глубинах космоса",
-                excerpt: "Астрофизики зафиксировали странные сигналы, указывающие на существование неизвестной ранее материи...",
-                date: "13 дек 2024",
-                image: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=400",
-                content: `
-                    <p>Международная группа астрофизиков объявила об открытии, которое может перевернуть наши представления о Вселенной. Анализируя данные с телескопа "Хаббл", ученые обнаружили аномалии, указывающие на существование ранее неизвестной формы материи.</p>
-                    
-                    <p>Новая материя, получившая временное название "ксено-материя", проявляет свойства, не соответствующие ни одному из известных состояний вещества. Она не взаимодействует с электромагнитным излучением, но оказывает гравитационное воздействие на окружающие объекты.</p>
-                    
-                    <p>"Это открытие ставит под сомнение Стандартную модель физики и открывает новые направления для исследований", — говорит профессор Мартин Шмидт из Кембриджского университета.</p>
-                `
-            },
-            {
-                id: 4,
-                category: "ОБЩЕСТВО",
-                title: "Города будущего: как изменится жизнь мегаполисов через 10 лет",
-                excerpt: "Умные города, вертикальные фермы и беспилотный транспорт — что ждет жителей крупных городов...",
-                date: "12 дек 2024",
-                image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400",
-                content: `
-                    <p>Эксперты в области урбанистики представили прогноз развития крупных городов на ближайшее десятилетие. Согласно их исследованиям, уже к 2035 году жизнь в мегаполисах кардинально изменится.</p>
-                    
-                    <p>Основные тенденции включают повсеместное внедрение интернета вещей, создание вертикальных ферм для обеспечения продовольственной безопасности, переход на беспилотный общественный транспорт и развитие систем переработки отходов с замкнутым циклом.</p>
-                    
-                    <p>"Города будущего станут не просто умными, а адаптивными — они будут подстраиваться под потребности каждого жителя", — утверждает урбанист Джейн Доу.</p>
-                `
-            }
-        ];
+        const newsData = {
+            foryou: [
+                {
+                    id: 1,
+                    category: "technology",
+                    title: "Искусственный интеллект научился читать мысли",
+                    excerpt: "Новая нейросеть может воссоздавать изображения прямо из мозговой активности человека",
+                    date: "15 дек",
+                    image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=600",
+                    content: `
+                        <p>Ученые из Стэнфордского университета представили революционную технологию, позволяющую искусственному интеллекту визуализировать мысли человека. Система анализирует сигналы мозга и преобразует их в изображения с поразительной точностью.</p>
+                        
+                        <p>В ходе экспериментов добровольцам показывали различные изображения, а ИИ в реальном времени воссоздавал их на основе данных фМРТ. Результаты превзошли все ожидания — система смогла генерировать узнаваемые образы с точностью до 85%.</p>
+                    `
+                },
+                {
+                    id: 2,
+                    category: "culture", 
+                    title: "В Москве открылась выставка забытых художников авангарда",
+                    excerpt: "Более 200 работ неизвестных гениев русского авангарда впервые представлены публике",
+                    date: "14 дек",
+                    image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=600",
+                    content: `
+                        <p>В Государственной Третьяковской галерее начала работу уникальная выставка "Забытые гении авангарда", на которой представлены работы художников, чьи имена были незаслуженно забыты историей.</p>
+                    `
+                }
+            ],
+            popular: [
+                {
+                    id: 3,
+                    category: "science",
+                    title: "Обнаружена новая форма материи в глубинах космоса",
+                    excerpt: "Астрофизики зафиксировали странные сигналы, указывающие на существование неизвестной ранее материи",
+                    date: "13 дек", 
+                    image: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=600",
+                    content: `<p>Международная группа астрофизиков объявила об открытии новой формы материи...</p>`
+                }
+            ],
+            trending: [
+                {
+                    id: 4,
+                    category: "society",
+                    title: "Города будущего: как изменится жизнь мегаполисов через 10 лет",
+                    excerpt: "Умные города, вертикальные фермы и беспилотный транспорт — что ждет жителей крупных городов",
+                    date: "12 дек",
+                    image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600",
+                    content: `<p>Эксперты в области урбанистики представили прогноз развития крупных городов...</p>`
+                }
+            ],
+            following: [
+                {
+                    id: 5,
+                    category: "technology",
+                    title: "Технологии будущего: что нас ждет в 2025 году",
+                    excerpt: "Обзор самых перспективных технологических трендов следующего года",
+                    date: "11 дек",
+                    image: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=600",
+                    content: `<p>Аналитики предсказывают бум в области искусственного интеллекта и квантовых вычислений...</p>`
+                }
+            ]
+        };
 
-        // Инициализация Telegram Web App
+        // Инициализация Telegram
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
 
-        // Загрузка новостей
-        function loadNews() {
-            const newsGrid = document.getElementById('newsGrid');
-            newsGrid.innerHTML = '';
+        let currentTab = 'foryou';
 
-            newsData.forEach(news => {
-                const newsCard = document.createElement('div');
-                newsCard.className = 'news-card';
-                newsCard.onclick = () => openArticle(news);
-                
-                newsCard.innerHTML = `
-                    <div class="news-category">${news.category}</div>
-                    <div class="news-title">${news.title}</div>
-                    <div class="news-excerpt">${news.excerpt}</div>
-                    <div class="news-meta">
-                        <span class="news-date">${news.date}</span>
-                        <span>Читать →</span>
+        // Загрузка новостей
+        function loadNews(tab = 'foryou') {
+            const newsFeed = document.getElementById('newsFeed');
+            const news = newsData[tab] || [];
+            
+            if (news.length === 0) {
+                newsFeed.innerHTML = '<div class="loading">Пока нет новостей</div>';
+                return;
+            }
+
+            newsFeed.innerHTML = news.map(item => `
+                <div class="news-card" data-category="${item.category}" onclick="openArticle(${item.id}, '${tab}')">
+                    <div class="card-content">
+                        <div class="card-category">${getCategoryName(item.category)}</div>
+                        <div class="card-title">${item.title}</div>
+                        <div class="card-excerpt">${item.excerpt}</div>
+                        <div class="card-meta">
+                            <span class="card-date">${item.date}</span>
+                            <div class="card-actions">
+                                <button class="action-btn" onclick="event.stopPropagation()">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                                <button class="action-btn" onclick="event.stopPropagation()">
+                                    <i class="far fa-bookmark"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                `;
-                
-                newsGrid.appendChild(newsCard);
-            });
+                </div>
+            `).join('');
+        }
+
+        // Переключение табов
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Обновляем активный таб
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Загружаем новости
+            loadNews(tab);
+        }
+
+        // Получение названия категории
+        function getCategoryName(category) {
+            const categories = {
+                technology: "Технологии",
+                culture: "Культура", 
+                science: "Наука",
+                society: "Общество"
+            };
+            return categories[category] || category;
         }
 
         // Открытие статьи
-        function openArticle(news) {
+        function openArticle(id, tab) {
+            const news = newsData[tab].find(item => item.id === id);
+            if (!news) return;
+
             const articleContainer = document.getElementById('articleContainer');
-            
             articleContainer.innerHTML = `
                 <div class="article" style="display: block;">
                     <div class="article-header">
                         <button class="article-back" onclick="closeArticle()">
-                            ← Назад
+                            <i class="fas fa-arrow-left"></i> Назад
                         </button>
-                        <div class="news-category">${news.category}</div>
+                    </div>
+                    <div class="article-content">
+                        <div class="card-category">${getCategoryName(news.category)}</div>
                         <h1 class="article-title">${news.title}</h1>
                         <div class="article-meta">
                             <span>${news.date}</span>
+                            <span>•</span>
                             <span>Фул.тьма</span>
                         </div>
-                    </div>
-                    <div class="article-content">
                         <img src="${news.image}" alt="${news.title}" class="article-image">
-                        ${news.content}
+                        <div class="article-text">
+                            ${news.content}
+                        </div>
                     </div>
                 </div>
             `;
@@ -326,8 +478,7 @@
 
         // Закрытие статьи
         function closeArticle() {
-            const articleContainer = document.getElementById('articleContainer');
-            articleContainer.innerHTML = '';
+            document.getElementById('articleContainer').innerHTML = '';
         }
 
         // Выход из приложения
@@ -335,7 +486,7 @@
             tg.close();
         }
 
-        // Загружаем новости при старте
+        // Инициализация
         loadNews();
     </script>
 </body>
