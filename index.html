@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -301,6 +302,13 @@
             height: 80px;
             border-radius: 4px;
             border: 1px solid #333;
+            background: linear-gradient(45deg, #333, #555);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-align: center;
         }
 
         .review-content {
@@ -354,6 +362,7 @@
             padding: 40px 20px;
             text-align: center;
             border-top: 1px solid #222;
+            margin-bottom: 70px;
         }
 
         .social-links {
@@ -440,6 +449,25 @@
             cursor: pointer;
             z-index: 100;
         }
+
+        .placeholder-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, #333, #555);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+
+        .placeholder-text {
+            background: linear-gradient(45deg, #333, #555);
+            color: transparent;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -448,46 +476,46 @@
         <div class="header-content">
             <div class="logo glitch-text" data-text="фул.тьма">фул.тьма</div>
             <div class="nav-menu">
-                <button class="nav-item active">Новости</button>
-                <button class="nav-item">Мнения</button>
-                <button class="nav-item">Обзоры</button>
-                <button class="nav-item">Архив</button>
-                <button class="nav-item">О проекте</button>
+                <button class="nav-item active">[МЕНЮ_1]</button>
+                <button class="nav-item">[МЕНЮ_2]</button>
+                <button class="nav-item">[МЕНЮ_3]</button>
+                <button class="nav-item">[МЕНЮ_4]</button>
+                <button class="nav-item">[МЕНЮ_5]</button>
             </div>
-            <input class="search-bar" type="text" placeholder="Что тревожит твой слух?">
+            <input class="search-bar" type="text" placeholder="[ПЛЕЙСХОЛДЕР_ПОИСКА]">
         </div>
     </div>
 
     <!-- Hero -->
     <div class="hero">
-        <h1 class="hero-title glitch-text" data-text="фул.тьма">фул.тьма</h1>
-        <p class="hero-subtitle">Глубокие музыкальные размышления, мрачная эстетика, альтернативные взгляды. Там, где заканчивается свет.</p>
+        <h1 class="hero-title glitch-text" data-text="[НАЗВАНИЕ_САЙТА]">[НАЗВАНИЕ_САЙТА]</h1>
+        <p class="hero-subtitle">[ОПИСАНИЕ_САЙТА_И_ЕГО_КОНЦЕПЦИИ]</p>
     </div>
 
     <!-- Актуальное -->
     <div class="section">
         <h2 class="section-title">
             <i class="fas fa-fire"></i>
-            Актуальное
+            [РАЗДЕЛ_1_НАЗВАНИЕ]
         </h2>
         <div class="news-grid">
             <div class="news-card" onclick="openArticle(1)">
-                <div class="news-category">ТЕХНО | ФИЛОСОФИЯ</div>
-                <h3 class="news-title">Как звучит декабрь в Берлине: техно как философия</h3>
-                <p class="news-excerpt">Погружение в берлинские клубы, где техно становится религией, а ритм — молитвой. Исследуем звуковую архитектуру ночи.</p>
+                <div class="news-category">[КАТЕГОРИЯ_СТАТЬИ]</div>
+                <h3 class="news-title">[ЗАГОЛОВОК_СТАТЬИ_1]</h3>
+                <p class="news-excerpt">[КРАТКОЕ_ОПИСАНИЕ_СТАТЬИ_МАКСИМУМ_НА_ДВЕ_СТРОКИ_ТЕКСТА]</p>
                 <div class="news-meta">
-                    <span>15 дек 2024</span>
-                    <span>8 мин чтения</span>
+                    <span>[ДАТА_ПУБЛИКАЦИИ]</span>
+                    <span>[ВРЕМЯ_ЧТЕНИЯ]</span>
                 </div>
             </div>
             
             <div class="news-card" onclick="openArticle(2)">
-                <div class="news-category">ПОСТ-РОК | АНАЛИЗ</div>
-                <h3 class="news-title">Новая волна пост-рока: шум, тьма и надежда</h3>
-                <p class="news-excerpt">От Могвая до Godspeed: как современные коллективы переосмысливают жанр, добавляя в него новую глубину отчаяния.</p>
+                <div class="news-category">[КАТЕГОРИЯ_СТАТЬИ]</div>
+                <h3 class="news-title">[ЗАГОЛОВОК_СТАТЬИ_2]</h3>
+                <p class="news-excerpt">[КРАТКОЕ_ОПИСАНИЕ_СТАТЬИ_МАКСИМУМ_НА_ДВЕ_СТРОКИ_ТЕКСТА]</p>
                 <div class="news-meta">
-                    <span>14 дек 2024</span>
-                    <span>12 мин чтения</span>
+                    <span>[ДАТА_ПУБЛИКАЦИИ]</span>
+                    <span>[ВРЕМЯ_ЧТЕНИЯ]</span>
                 </div>
             </div>
         </div>
@@ -497,31 +525,31 @@
     <div class="section">
         <h2 class="section-title">
             <i class="fas fa-brain"></i>
-            Мнения
+            [РАЗДЕЛ_2_НАЗВАНИЕ]
         </h2>
         <div class="opinions-grid">
             <div class="opinion-card" onclick="openArticle(3)">
                 <div class="opinion-header">
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" class="avatar" alt="Автор">
+                    <div class="avatar">[АВАТАР]</div>
                     <div>
-                        <div class="author-name">Максим Тёмный</div>
-                        <div style="font-size: 12px; color: var(--text-secondary);">Главный редактор</div>
+                        <div class="author-name">[ИМЯ_АВТОРА]</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">[ДОЛЖНОСТЬ_АВТОРА]</div>
                     </div>
                 </div>
-                <h3 style="margin-bottom: 10px; color: var(--accent-red);">Музыка больше не спасает — и это нормально</h3>
-                <p style="color: var(--text-secondary); font-size: 14px;">Возможно, музыка никогда и не должна была спасать. Её истинная цель — сопровождать нас в падении, а не останавливать его.</p>
+                <h3 style="margin-bottom: 10px; color: var(--accent-red);">[ЗАГОЛОВОК_МНЕНИЯ_1]</h3>
+                <p style="color: var(--text-secondary); font-size: 14px;">[КРАТКОЕ_ОПИСАНИЕ_МНЕНИЯ_ИЛИ_ЦИТАТА]</p>
             </div>
             
             <div class="opinion-card" onclick="openArticle(4)">
                 <div class="opinion-header">
-                    <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100" class="avatar" alt="Автор">
+                    <div class="avatar">[АВАТАР]</div>
                     <div>
-                        <div class="author-name">Анна Бездонная</div>
-                        <div style="font-size: 12px; color: var(--text-secondary);">Музыкальный критик</div>
+                        <div class="author-name">[ИМЯ_АВТОРА]</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">[ДОЛЖНОСТЬ_АВТОРА]</div>
                     </div>
                 </div>
-                <h3 style="margin-bottom: 10px; color: var(--accent-red);">Почему мы слушаем боль, а не радость</h3>
-                <p style="color: var(--text-secondary); font-size: 14px;">В эпоху тотального позитива именно грустная музыка становится актом сопротивления. Исследую психологию музыкального мазохизма.</p>
+                <h3 style="margin-bottom: 10px; color: var(--accent-red);">[ЗАГОЛОВОК_МНЕНИЯ_2]</h3>
+                <p style="color: var(--text-secondary); font-size: 14px;">[КРАТКОЕ_ОПИСАНИЕ_МНЕНИЯ_ИЛИ_ЦИТАТА]</p>
             </div>
         </div>
     </div>
@@ -530,16 +558,26 @@
     <div class="section">
         <h2 class="section-title">
             <i class="fas fa-headphones"></i>
-            Обзоры
+            [РАЗДЕЛ_3_НАЗВАНИЕ]
         </h2>
         <div class="reviews-grid">
             <div class="review-card" onclick="openArticle(5)">
-                <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200" class="album-cover" alt="Обложка альбома">
+                <div class="album-cover">[ОБЛОЖКА_АЛЬБОМА]</div>
                 <div class="review-content">
-                    <h3 class="album-title">The Smashing Pumpkins - "Mellon Collie and the Infinite Sadness"</h3>
-                    <div class="rating">ПОГРУЖЕНИЕ — 9/10 | АТМОСФЕРА — 10/10</div>
-                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 15px;">Двойной альбом как манифест поколения, застрявшего между мечтой и реальностью. Переосмысление спустя 25 лет.</p>
-                    <button style="background: var(--accent-blue); color: white; border: none; padding: 8px 16px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer;">Читать обзор</button>
+                    <h3 class="album-title">[НАЗВАНИЕ_АЛЬБОМА_И_ИСПОЛНИТЕЛЬ]</h3>
+                    <div class="rating">[РЕЙТИНГ_И_ОЦЕНКИ]</div>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 15px;">[КРАТКОЕ_ОПИСАНИЕ_ОБЗОРА]</p>
+                    <button style="background: var(--accent-blue); color: white; border: none; padding: 8px 16px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer;">[ТЕКСТ_КНОПКИ]</button>
+                </div>
+            </div>
+
+            <div class="review-card" onclick="openArticle(6)">
+                <div class="album-cover">[ОБЛОЖКА_АЛЬБОМА]</div>
+                <div class="review-content">
+                    <h3 class="album-title">[НАЗВАНИЕ_АЛЬБОМА_И_ИСПОЛНИТЕЛЬ]</h3>
+                    <div class="rating">[РЕЙТИНГ_И_ОЦЕНКИ]</div>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 15px;">[КРАТКОЕ_ОПИСАНИЕ_ОБЗОРА]</p>
+                    <button style="background: var(--accent-blue); color: white; border: none; padding: 8px 16px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer;">[ТЕКСТ_КНОПКИ]</button>
                 </div>
             </div>
         </div>
@@ -550,16 +588,17 @@
         <div class="social-links">
             <a href="#" class="social-link"><i class="fab fa-telegram"></i></a>
             <a href="#" class="social-link"><i class="fab fa-mastodon"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-[СОЦСЕТЬ_3]"></i></a>
         </div>
         <div class="newsletter">
-            <div class="newsletter-text">Тьма приходит по четвергам</div>
-            <input type="email" class="newsletter-input" placeholder="your.email@darkness.com">
+            <div class="newsletter-text">[ТЕКСТ_РАССЫЛКИ]</div>
+            <input type="email" class="newsletter-input" placeholder="[ПЛЕЙСХОЛДЕР_EMAIL]">
         </div>
         <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 20px;">
-            "Расскажи, что ты слышал" — форма для твоих откровений
+            [ТЕКСТ_ПРИЗЫВА_К_ДЕЙСТВИЮ]
         </div>
         <div style="color: var(--text-secondary); font-size: 11px;">
-            фул.тьма © 2024 | музыка из глубины
+            [КОПИРАЙТ_И_ДОПОЛНИТЕЛЬНАЯ_ИНФОРМАЦИЯ]
         </div>
     </div>
 
@@ -567,8 +606,8 @@
     <div class="bottom-nav">
         <button class="nav-icon active"><i class="fas fa-home"></i></button>
         <button class="nav-icon"><i class="fas fa-search"></i></button>
-        <button class="nav-icon"><i class="fas fa-brain"></i></button>
-        <button class="nav-icon"><i class="fas fa-archive"></i></button>
+        <button class="nav-icon"><i class="fas fa-[ИКОНКА_3]"></i></button>
+        <button class="nav-icon"><i class="fas fa-[ИКОНКА_4]"></i></button>
         <button class="nav-icon"><i class="fas fa-cog"></i></button>
     </div>
 
@@ -577,7 +616,7 @@
 
     <!-- Exit Button -->
     <button class="exit-btn" onclick="closeApp()">
-        <i class="fas fa-door-open"></i> ВЫЙТИ ИЗ ТЬМЫ
+        <i class="fas fa-door-open"></i> [ТЕКСТ_КНОПКИ_ВЫХОДА]
     </button>
 
     <script>
@@ -589,28 +628,27 @@
         // Данные статей
         const articles = {
             1: {
-                title: "Как звучит декабрь в Берлине: техно как философия",
-                category: "ТЕХНО | ФИЛОСОФИЯ",
+                title: "[ЗАГОЛОВОК_СТАТЬИ]",
+                category: "[КАТЕГОРИЯ_СТАТЬИ]",
                 content: `
-                    <p>Берлин в декабре — это не просто город, это состояние. Воздух наполнен предвкушением, а подземные клубы становятся храмами, где техно исполняет роль священного ритуала.</p>
-                    
-                    <p>В 4 утра в Tresor звук приобретает новое измерение. Это не просто музыка — это коллективный транс, медитация для потерянных душ. Бас-линии пронизывают тело, а высокие частоты очищают сознание.</p>
-                    
-                    <p>Местные диджеи не просто играют музыку — они проводят через тьму к просветлению. Каждый сет — это путешествие от хаоса к порядку и обратно.</p>
-                    
-                    <p>"Техно здесь — это не развлечение, это необходимость", — говорит резидент Berghain, известный только как Маркус. "В этом звуке мы находим то, что потеряли в дневной жизни".</p>
+                    <div class="placeholder-image">[ИЗОБРАЖЕНИЕ_СТАТЬИ]</div>
+                    <p class="placeholder-text">[ПАРАГРАФ_ТЕКСТА_СТАТЬИ_ПЕРВЫЙ]</p>
+                    <p class="placeholder-text">[ПАРАГРАФ_ТЕКСТА_СТАТЬИ_ВТОРОЙ]</p>
+                    <p class="placeholder-text">[ПАРАГРАФ_ТЕКСТА_СТАТЬИ_ТРЕТИЙ]</p>
                 `,
-                image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800",
-                date: "15 дек 2024",
-                author: "Максим Тёмный"
+                date: "[ДАТА_ПУБЛИКАЦИИ]",
+                author: "[ИМЯ_АВТОРА]"
             },
             2: {
-                title: "Новая волна пост-рока: шум, тьма и надежда", 
-                category: "ПОСТ-РОК | АНАЛИЗ",
-                content: `<p>Содержание статьи...</p>`,
-                image: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=800",
-                date: "14 дек 2024",
-                author: "Анна Бездонная"
+                title: "[ЗАГОЛОВОК_СТАТЬИ]",
+                category: "[КАТЕГОРИЯ_СТАТЬИ]",
+                content: `
+                    <div class="placeholder-image">[ИЗОБРАЖЕНИЕ_СТАТЬИ]</div>
+                    <p class="placeholder-text">[ПАРАГРАФ_ТЕКСТА_СТАТЬИ_ПЕРВЫЙ]</p>
+                    <p class="placeholder-text">[ПАРАГРАФ_ТЕКСТА_СТАТЬИ_ВТОРОЙ]</p>
+                `,
+                date: "[ДАТА_ПУБЛИКАЦИИ]",
+                author: "[ИМЯ_АВТОРА]"
             }
         };
 
@@ -623,7 +661,7 @@
                 <div class="article" style="display: block;">
                     <div class="article-content">
                         <button class="article-back" onclick="closeArticle()">
-                            <i class="fas fa-arrow-left"></i> НАЗАД К ТЬМЕ
+                            <i class="fas fa-arrow-left"></i> [ТЕКСТ_КНОПКИ_НАЗАД]
                         </button>
                         
                         <div class="news-category">${article.category}</div>
@@ -634,14 +672,10 @@
                             <span>•</span>
                             <span>${article.author}</span>
                             <span>•</span>
-                            <span>8 мин чтения</span>
+                            <span>[ВРЕМЯ_ЧТЕНИЯ]</span>
                         </div>
                         
-                        <img src="${article.image}" alt="${article.title}" style="width: 100%; border-radius: 8px; margin-bottom: 30px; border: 1px solid #333;">
-                        
-                        <div style="font-size: 16px; line-height: 1.8; color: var(--text-primary);">
-                            ${article.content}
-                        </div>
+                        ${article.content}
                     </div>
                 </div>
             `;
@@ -667,3 +701,38 @@
     </script>
 </body>
 </html>
+```
+
+## 🎯 **Что теперь заменено на плейсхолдеры:**
+
+### 📝 **Текстовые блоки:**
+- `[НАЗВАНИЕ_САЙТА]` - главный заголовок
+- `[ОПИСАНИЕ_САЙТА...]` - подзаголовок с концепцией
+- `[РАЗДЕЛ_1_НАЗВАНИЕ]` - названия разделов
+- `[КАТЕГОРИЯ_СТАТЬИ]` - категории контента
+- `[ЗАГОЛОВОК_СТАТЬИ_1]` - заголовки материалов
+- `[КРАТКОЕ_ОПИСАНИЕ...]` - описания и анонсы
+
+### 👥 **Авторский контент:**
+- `[ИМЯ_АВТОРА]` - имена авторов
+- `[ДОЛЖНОСТЬ_АВТОРА]` - роли в проекте
+- `[АВАТАР]` - место для фотографий
+
+### 🎵 **Музыкальный контент:**
+- `[НАЗВАНИЕ_АЛЬБОМА...]` - названия и исполнители
+- `[РЕЙТИНГ_И_ОЦЕНКИ]` - система оценок
+- `[ОБЛОЖКА_АЛЬБОМА]` - место для обложек
+
+### ⚙️ **Настройки и метаданные:**
+- `[МЕНЮ_1]` - пункты навигации
+- `[ПЛЕЙСХОЛДЕР_ПОИСКА]` - текст в поиске
+- `[ТЕКСТ_КНОПКИ]` - надписи на кнопках
+- `[ТЕКСТ_РАССЫЛКИ]` - текст для email-подписки
+- `[ИКОНКА_3]` - иконки навигации
+
+### 📅 **Служебная информация:**
+- `[ДАТА_ПУБЛИКАЦИИ]` - даты материалов
+- `[ВРЕМЯ_ЧТЕНИЯ]` - время прочтения
+- `[КОПИРАЙТ...]` - информация в футере
+
+Теперь можно легко заполнить сайт реальным контентом, просто заменяя плейсхолдеры! 🖋️
