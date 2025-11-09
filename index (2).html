@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Моя Telegram Web App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .user-card {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .cool-button {
+            background: #fff;
+            color: #667eea;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s;
+        }
+
+        .cool-button:hover {
+            transform: scale(1.05);
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: block;
+            border: 3px solid white;
+        }
+
+        .feature-list {
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .feature-list li {
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Моя первая Web App в Telegram!</h1>
+
+        <div id="user-info" class="user-card">
+            <p>Загружаем информацию о вас...</p>
+        </div>
+
+        <div class="feature-list">
+            <h3>Что умеет это приложение:</h3>
+            <ul>
+                <li>📱 Работает внутри Telegram</li>
+                <li>👤 Видит ваше имя и фото</li>
+                <li>🎨 Красивый интерфейс</li>
+                <li>💬 Взаимодействует с Telegram</li>
+            </ul>
+        </div>
+
+        <button class="cool-button" onclick="showWelcome()">Поприветствовать</button>
+        <button class="cool-button" onclick="changeTheme()">Сменить тему</button>
+        <button class="cool-button" onclick="showMainButton()">Показать главную кнопку</button>
+    </div>
+
+    <script>
+        // Подключаемся к Telegram
+        const tg = window.Telegram.WebApp;
+
+        // Говорим Telegram что приложение готово и растягиваем на весь экран
+        tg.ready();
+        tg.expand();
+
+        // Получаем информацию о пользователе
+        const user = tg.initDataUnsafe.user;
+        const userInfo = document.getElementById('user-info');
+
+        if (user) {
+            let userHTML = '';
+
+            if (user.photo_url) {
+                userHTML += `<img src="${user.photo_url}" alt="Avatar" class="avatar">`;
+            }
+
+            userHTML += `
+                <h2>${user.first_name || ''} ${user.last_name || ''}</h2>
+                <p>@${user.username || 'нет username'}</p>
+                <p><small>ID: ${user.id}</small></p>
+            `;
+
+            userInfo.innerHTML = userHTML;
+        } else {
+            userInfo.innerHTML = '<p>Гость</p><p><small>Информация недоступна</small></p>';
+        }
+
+        // Функции для кнопок
+        function showWelcome() {
+            const name = user ? user.first_name : 'друг';
+            tg.showPopup({
+                title: 'Привет! 👋',
+                message: `Рад видеть тебя, ${name}! Это твоя первая Web App в Telegram!`,
+                buttons: [{ type: 'ok' }]
+            });
+        }
+
+        function changeTheme() {
+            const currentBg = document.body.style.background;
+            if (currentBg.includes('#667eea')) {
+                document.body.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%)';
+            } else if (currentBg.includes('#ff6b6b')) {
+                document.body.style.background = 'linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%)';
+            } else {
+                document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
+        }
+
+        function showMainButton() {
+            if (!tg.MainButton.isVisible) {
+                tg.MainButton.setText('✨ Крутая кнопка!');
+                tg.MainButton.show();
+                tg.MainButton.onClick(function() {
+                    tg.showAlert('Вы нажали главную кнопку! Эта кнопка находится ВНУТРИ Telegram!');
+                });
+            } else {
+                tg.MainButton.hide();
+            }
+        }
+
+        // Показываем информацию в консоли для отладки
+        console.log('Telegram Web App инициализирован:', tg);
+        console.log('Данные пользователя:', user);
+    </script>
+</body>
+</html>
