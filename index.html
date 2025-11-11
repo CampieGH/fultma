@@ -1,210 +1,150 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ФУЛТЬМА</title>
-<style>
-  /* Базовые стили */
-  body {
-    margin: 0;
-    font-family: 'Segoe UI', Tahoma, sans-serif;
-    background: #121212;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ФУЛТЬМА</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      color: #fff;
+    }
 
-  /* Хедер */
-  header {
-    padding: 20px;
-    text-align: center;
-    font-size: 1.8rem;
-    font-weight: bold;
-    backdrop-filter: blur(10px);
-    background: rgba(30,30,30,0.5);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-  }
+    body {
+      background: radial-gradient(circle at 30% 10%, #1a1a2e, #0f0f17);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
 
-  /* Лента */
-  .feed {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-  }
+    header {
+      text-align: center;
+      padding: 25px 0 15px;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      backdrop-filter: blur(20px);
+      background: rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
 
-  /* Карточки */
-  .card {
-    background: rgba(50,50,50,0.4);
-    backdrop-filter: blur(15px);
-    border-radius: 15px;
-    padding: 15px;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
+    .feed {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
 
-  .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-  }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 16px 18px;
+      transition: 0.3s;
+    }
 
-  .card.mini {
-    cursor: default;
-  }
+    .card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
 
-  .card h3 {
-    margin: 0 0 10px;
-    font-size: 1.2rem;
-  }
+    .card h3 {
+      font-size: 17px;
+      margin-bottom: 8px;
+      color: #f0f0f0;
+    }
 
-  .card p {
-    margin: 0;
-    font-size: 0.95rem;
-    color: #ccc;
-  }
+    .card p {
+      font-size: 14px;
+      color: #d2d2d2;
+      line-height: 1.5;
+    }
 
-  /* Открытый пост */
-  .modal {
-    position: fixed;
-    top:0;
-    left:0;
-    width: 100%;
-    height:100%;
-    background: rgba(0,0,0,0.8);
-    backdrop-filter: blur(5px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s;
-    z-index: 10;
-  }
+    .short {
+      opacity: 0.9;
+      font-style: italic;
+    }
 
-  .modal.active {
-    opacity: 1;
-    visibility: visible;
-  }
+    .nav {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(20px);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-radius: 40px;
+      width: 90%;
+      max-width: 420px;
+      padding: 12px 0;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
 
-  .modal-content {
-    background: rgba(50,50,50,0.7);
-    backdrop-filter: blur(20px);
-    border-radius: 20px;
-    padding: 30px;
-    max-width: 500px;
-    width: 100%;
-    color: #fff;
-    position: relative;
-  }
+    .nav button {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      opacity: 0.8;
+      transition: 0.2s;
+    }
 
-  .modal-content h3 {
-    margin-top:0;
-  }
+    .nav button.active,
+    .nav button:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
 
-  .close-btn {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #fff;
-  }
-
-  /* Навигация (остров) */
-  nav {
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 0;
-    backdrop-filter: blur(15px);
-    background: rgba(30,30,30,0.5);
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.5);
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-  }
-
-  nav button {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 1rem;
-    cursor: pointer;
-    padding: 10px 15px;
-    transition: color 0.2s;
-  }
-
-  nav button.active {
-    color: #00bfff;
-  }
-</style>
+    @media (min-width: 800px) {
+      body {
+        justify-content: center;
+        align-items: center;
+      }
+      .feed {
+        max-width: 600px;
+      }
+    }
+  </style>
 </head>
 <body>
+  <header>ФУЛТЬМА</header>
+  <div class="feed" id="feed"></div>
 
-<header>ФУЛТЬМА</header>
-
-<div class="feed" id="feed">
-  <!-- Посты и мнения добавим скриптом -->
-</div>
-
-<nav>
-  <button class="active">Лента</button>
-  <button>Создать</button>
-  <button>Настройки</button>
-</nav>
-
-<!-- Модалка для поста -->
-<div class="modal" id="modal">
-  <div class="modal-content">
-    <span class="close-btn" id="closeModal">&times;</span>
-    <h3 id="modalTitle">Заголовок поста</h3>
-    <p id="modalText">Текст поста...</p>
+  <div class="nav">
+    <button class="active">🏠</button>
+    <button>📝</button>
+    <button>✨</button>
+    <button>⚙️</button>
   </div>
-</div>
 
-<script>
-const feed = document.getElementById('feed');
-const modal = document.getElementById('modal');
-const modalTitle = document.getElementById('modalTitle');
-const modalText = document.getElementById('modalText');
-const closeModal = document.getElementById('closeModal');
+  <script>
+    const feed = document.getElementById('feed');
 
-const posts = [
-  {type:'post', title:'Новый тренд в музыке', text:'Сегодня разбираем эффект Моргенштерна и влияние мемов на музыку...'},
-  {type:'opinion', title:'Короткое мнение', text:'Сэмплирование это больше чем просто заимствование.'},
-  {type:'post', title:'Секрет популярности трека', text:'Что делает трек вирусным и почему одни песни выстреливают, а другие нет...'},
-  {type:'opinion', title:'Ещё мнение', text:'Музыка без визуала — как хлеб без масла.'}
-];
+    const posts = [
+      { type: 'post', title: 'Какой вайб у осени?', text: 'Туман, мягкий шум и мысли, что всё снова повторится. Но по-другому.' },
+      { type: 'short', title: 'Мнение', text: 'Всё лучше ночью.' },
+      { type: 'post', title: 'Фултьма как пространство', text: 'Это не просто контент. Это настроение. Твоя лента — как отражение внутреннего шума.' },
+      { type: 'short', title: 'Мнение', text: 'Молчание громче.' }
+    ];
 
-posts.forEach(post => {
-  const card = document.createElement('div');
-  card.className = 'card' + (post.type === 'opinion' ? ' mini' : '');
-  card.innerHTML = `<h3>${post.title}</h3>${post.type==='post'?'<p>'+post.text.slice(0,60)+'...</p>':''}`;
-  
-  if(post.type==='post'){
-    card.addEventListener('click', () => {
-      modalTitle.textContent = post.title;
-      modalText.textContent = post.text;
-      modal.classList.add('active');
+    posts.forEach(post => {
+      const card = document.createElement('div');
+      card.classList.add('card');
+      if (post.type === 'short') card.classList.add('short');
+      card.innerHTML = `<h3>${post.title}</h3><p>${post.text}</p>`;
+      if (post.type === 'post') {
+        card.addEventListener('click', () => alert('Открыт пост: ' + post.title));
+      }
+      feed.appendChild(card);
     });
-  }
-  
-  feed.appendChild(card);
-});
-
-closeModal.addEventListener('click', () => {
-  modal.classList.remove('active');
-});
-
-// Закрытие по клику вне модалки
-modal.addEventListener('click', (e)=>{
-  if(e.target===modal) modal.classList.remove('active');
-});
-</script>
-
+  </script>
 </body>
 </html>
