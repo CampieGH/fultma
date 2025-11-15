@@ -1,345 +1,62 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Feed — Demo</title>
-  <style>
-  /* Mobile-first dark design inspired by the provided image */
-  :root{
-    --bg:#0b0b0b;
-    --card:#111213;
-    --muted:#9aa0a6;
-    --accent:#ffd24d;
-    --glass: rgba(255,255,255,0.03);
-    --soft: rgba(255,255,255,0.02);
-    --radius:18px;
-    font-family: Inter, Roboto, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;background:
-  linear-gradient(180deg,#0a0a0a 0%, #0f0f10 100%);color:#fff;-webkit-font-smoothing:antialiased}
-  .app{display:flex;flex-direction:column;min-height:100vh;padding:20px 14px 96px}
-
-  /* Card */
-  .feed{display:flex;flex-direction:column;gap:18px;align-items:center}
-  .card{
-    width:100%;max-width:720px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.2));
-    border-radius:18px;padding:22px;border:1px solid rgba(255,255,255,0.03);backdrop-filter: blur(6px);
-    box-shadow: 0 8px 28px rgba(0,0,0,0.6);
-    transform-origin:center;
-    transition:transform .36s cubic-bezier(.2,.9,.3,1),opacity .28s ease;
-  }
-  .card.hidden {opacity:0;transform:translateY(12px) scale(.99);pointer-events:none}
-  .card h3{margin:0 0 10px;font-size:20px}
-  .card p{margin:0 0 16px;color:var(--muted);line-height:1.46}
-  .card .meta{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
-  .card .controls{display:flex;gap:10px;margin-top:14px}
-  .btn{
-    background:var(--soft);border-radius:999px;padding:12px 18px;border:none;color:#fff;font-weight:600;
-    box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3);
-  }
-  .icon-btn{background:transparent;border:none;color:var(--muted);font-size:18px;padding:8px;border-radius:10px}
-
-  /* Save icon */
-  .save{
-    width:44px;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);display:inline-grid;place-items:center;
-    background:transparent;transition:background .2s, border-color .2s, transform .12s;
-  }
-  .save.saved{background:linear-gradient(180deg, rgba(255,210,77,0.12), rgba(255,210,77,0.08));border-color:rgba(255,210,77,0.9);box-shadow:0 6px 18px rgba(255,210,77,0.05)}
-
-  /* Modal */
-  .modal{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;padding:28px;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.78));backdrop-filter: blur(6px);z-index:50}
-  .modal-inner{width:100%;height:100%;max-width:900px;background:var(--card);border-radius:14px;padding:14px;display:flex;flex-direction:column;overflow:auto}
-  .modal-header{display:flex;align-items:center;gap:12px;padding:8px}
-  .modal-content{padding:12px;color:#ddd;line-height:1.6}
-  .hidden{display:none}
-
-  /* Empty state */
-  .empty{max-width:720px;margin:60px auto 0;padding:26px;border-radius:14px;background:var(--glass);text-align:center;color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
-  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:10px 14px;border-radius:12px;color:#fff}
-
-  /* Bottom nav */
-  .bottom-nav{position:fixed;left:0;right:0;bottom:18px;display:flex;justify-content:center;pointer-events:none;z-index:60}
-  .nav-track{width:100%;max-width:760px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.15));padding:12px;border-radius:999px;display:flex;gap:6px;align-items:center;justify-content:space-between;position:relative;pointer-events:auto}
-  .nav-item{flex:1;background:transparent;border:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 6px;border-radius:12px;gap:6px;transition:color .18s, transform .12s;font-weight:600}
-  .nav-item .icon{width:20px;height:20px;fill:currentColor;opacity:.9}
-  .nav-item.active{color:#fff}
-  .indicator{
-    position:absolute;left:6px;top:6px;bottom:6px;width:64px;border-radius:999px;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.18));
-    transform:translateX(0);transition:transform .42s cubic-bezier(.2,.9,.25,1), width .28s;box-shadow:0 8px 24px rgba(0,0,0,0.6);
-    pointer-events:none;
-  }
-
-  /* Responsive & flavors */
-  @media(min-width:720px){
-    .app{padding:28px 48px 96px}
-    .card{padding:28px}
-    .indicator{width:88px}
-  }
-  </style>
-
-</head>
-<body>
-  <main class="app">
-    <!-- Card area -->
-    <section id="feed" class="feed">
-      <!-- Cards will be injected here -->
-    </section>
-
-    <!-- Empty state -->
-    <section id="emptyState" class="empty hidden">
-      <p>Ничего нового. Загляните в «Статьи» или «Мнения».</p>
-      <button id="goArticles" class="ghost">Перейти к статьям</button>
-    </section>
-
-    <!-- Fullscreen article modal -->
-    <div id="modal" class="modal hidden" aria-hidden="true">
-      <div class="modal-inner">
-        <header class="modal-header">
-          <button id="closeModal" class="icon-btn">←</button>
-          <div class="meta"></div>
-        </header>
-        <article id="modalContent" class="modal-content"></article>
+<script>
+function generateNewsCard({ title, description, image, link }) {
+  return `
+    <div style="
+      width: 100%;
+      max-width: 360px;
+      background: #0E0E0E;
+      border-radius: 18px;
+      padding: 18px;
+      color: white;
+      font-family: Inter, sans-serif;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      overflow: hidden;
+    ">
+      <div style="
+        width: 100%;
+        height: 180px;
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 14px;
+      ">
+        <img src="${image}" style="width: 100%; height: 100%; object-fit: cover;">
       </div>
+      <h2 style="
+        font-size: 20px;
+        margin: 0 0 8px 0;
+        font-weight: 600;
+      ">
+        ${title}
+      </h2>
+      <p style="
+        font-size: 14px;
+        opacity: 0.7;
+        margin: 0 0 16px 0;
+        line-height: 1.4;
+      ">
+        ${description}
+      </p>
+      <a href="${link}" style="
+        display: inline-block;
+        padding: 10px 14px;
+        background: #1A1A1A;
+        border-radius: 12px;
+        font-size: 14px;
+        color: white;
+        text-decoration: none;
+        transition: 0.2s;
+      " onmouseover="this.style.opacity=0.7" onmouseout="this.style.opacity=1">
+        Читать
+      </a>
     </div>
+  `;
+}
 
-    <!-- Bottom navigation -->
-    <nav class="bottom-nav" role="navigation" aria-label="Main">
-      <div class="nav-track" id="navTrack">
-        <button class="nav-item active" data-tab="home" aria-label="Главная">
-          <svg viewBox="0 0 24 24" class="icon"><path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10.5z"/></svg>
-          <span>Главная</span>
-        </button>
-        <button class="nav-item" data-tab="articles" aria-label="Статьи">
-          <svg viewBox="0 0 24 24" class="icon"><path d="M5 4h14v2H5zM5 8h14v2H5zM5 12h10v2H5z"/></svg>
-          <span>Статьи</span>
-        </button>
-        <button class="nav-item" data-tab="opinions" aria-label="Мнения">
-          <svg viewBox="0 0 24 24" class="icon"><path d="M4 4h16v10H9l-5 5V4z"/></svg>
-          <span>Мнения</span>
-        </button>
-        <button class="nav-item" data-tab="sections" aria-label="Разделы">
-          <svg viewBox="0 0 24 24" class="icon"><path d="M3 5h18v2H3zM3 11h18v2H3zM3 17h18v2H3z"/></svg>
-          <span>Разделы</span>
-        </button>
-        <!-- the moving circle     type="module" src="app.js" -->
-        <div id="indicator" class="indicator" aria-hidden="true"></div>
-      </div>
-    </nav>
-  </main>
-
-  <script>
-  // Data model & behavior
-  const DATA = [
-    {id:1,type:'article',title:'Идейные выводы',excerpt:'Банальные, но неопровержимые выводы, а также явные признаки победы институционализации...',date:'2025-11-01',saved:false,content:buildContent(1)},
-    {id:2,type:'opinion',title:'Короткое мнение о музыке',excerpt:'Немного мыслей о современном звучании и подходах...',date:'2025-10-28',saved:false,content:buildContent(2)},
-    {id:3,type:'article',title:'Обзор современных артистов',excerpt:'Краткий обзор новых трендов и исполнителей...',date:'2025-10-20',saved:false,content:buildContent(3)},
-    {id:4,type:'opinion',title:'Ещё одно мнение',excerpt:'Мнение, поместится в карточку и не открывается целиком...',date:'2025-09-15',saved:false,content:buildContent(4)}
-  ];
-
-  function buildContent(i){
-    return `<h2>Полная статья ${i}</h2><p>Здесь полный текст — длиннее, чем в карточке. Это три-четыре абзаца, чтобы протестировать скроллинг и читаемость на мобильном.</p>
-    <p>Абзац второй. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur sed.</p>
-    <p>Абзац третий. Публикационные данные и подвал.</p>`;
-  }
-
-  // state
-  let state = {
-    tab:'home', // home, articles, opinions, sections
-    feed: [...DATA],
-    index:0
-  };
-
-  // DOM
-  const feedEl = document.getElementById('feed');
-  const modal = document.getElementById('modal');
-  const modalContent = document.getElementById('modalContent');
-  const closeModal = document.getElementById('closeModal');
-  const emptyState = document.getElementById('emptyState');
-  const goArticles = document.getElementById('goArticles');
-  const navItems = Array.from(document.querySelectorAll('.nav-item'));
-  const indicator = document.getElementById('indicator');
-
-  function render(){
-    // highlight nav
-    navItems.forEach(n=> n.classList.toggle('active', n.dataset.tab===state.tab));
-    moveIndicator();
-
-    // feed content depending on tab
-    feedEl.innerHTML = '';
-    let list = [];
-    if(state.tab === 'home'){
-      list = feedForHome();
-    } else if(state.tab === 'articles'){
-      list = state.feed.filter(x=>x.type==='article');
-    } else if(state.tab === 'opinions'){
-      list = state.feed.filter(x=>x.type==='opinion');
-    } else if(state.tab === 'sections'){
-      list = null; // sections handled differently
-      renderSections();
-      return;
-    }
-
-    if(!list || list.length===0){
-      emptyState.classList.remove('hidden');
-      feedEl.classList.add('hidden');
-    } else {
-      emptyState.classList.add('hidden');
-      feedEl.classList.remove('hidden');
-      list.forEach(item => {
-        const card = createCard(item);
-        feedEl.appendChild(card);
-        requestAnimationFrame(()=>card.classList.remove('hidden'));
-      });
-    }
-  }
-
-  function feedForHome(){
-    // Home shows next unskipped chronologically. If empty, show saved items.
-    const remaining = state.feed.filter(i=>!i._hidden);
-    if(remaining.length>0) return [remaining[0]];
-    const saved = state.feed.filter(i=>i.saved);
-    return saved.length>0 ? saved : [];
-  }
-
-  function createCard(item){
-    const el = document.createElement('article');
-    el.className = 'card hidden';
-    el.setAttribute('data-id', item.id);
-    const title = document.createElement('h3'); title.textContent = item.title;
-    const p = document.createElement('p'); p.textContent = item.excerpt;
-    const meta = document.createElement('div'); meta.className='meta';
-    meta.innerHTML = `<span>${item.date}</span><span>${item.type === 'article' ? 'Статья' : 'Мнение'}</span>`;
-    const controls = document.createElement('div'); controls.className='controls';
-    // Save btn
-    const saveBtn = document.createElement('button'); saveBtn.className='save'; saveBtn.title='Сохранить';
-    saveBtn.innerHTML = '🔖';
-    if(item.saved) saveBtn.classList.add('saved');
-    saveBtn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      item.saved = !item.saved;
-      saveBtn.classList.toggle('saved', item.saved);
-      // Persist to localStorage
-      localSave();
-      render();
-    });
-    // Read / Not interested
-    const readBtn = document.createElement('button'); readBtn.className='btn'; readBtn.textContent='Читать полностью';
-    const noBtn = document.createElement('button'); noBtn.className='btn'; noBtn.textContent='Неинтересно';
-    controls.appendChild(saveBtn);
-    // if article -> allow open full; if opinion -> only save or hide
-    if(item.type==='article'){
-      const eye = document.createElement('span'); eye.style.marginLeft='10px';
-      readBtn.addEventListener('click', ()=>openFull(item));
-      controls.appendChild(readBtn);
-    } else {
-      readBtn.disabled = true; readBtn.style.opacity = .5;
-    }
-    noBtn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      // hide this item from feed
-      item._hidden = true;
-      render();
-    });
-    controls.appendChild(noBtn);
-
-    el.appendChild(title);
-    el.appendChild(p);
-    el.appendChild(meta);
-    el.appendChild(controls);
-
-    // clicking card opens for articles
-    el.addEventListener('click', ()=>{
-      if(item.type==='article') openFull(item);
-    });
-
-    return el;
-  }
-
-  function openFull(item){
-    modal.classList.remove('hidden');
-    modal.setAttribute('aria-hidden','false');
-    modalContent.innerHTML = `<h1>${item.title}</h1><div class="meta" style="color:var(--muted)">${item.date} • ${item.type}</div>` + item.content;
-    // if user opens full, we mark it as seen (hide later)
-    item._hidden = true;
-    render();
-  }
-
-  closeModal.addEventListener('click', ()=>{ modal.classList.add('hidden'); modal.setAttribute('aria-hidden','true'); });
-
-  // nav handlers
-  navItems.forEach(n=>{
-    n.addEventListener('click', ()=>{
-      state.tab = n.dataset.tab;
-      render();
-    });
-  });
-
-  // move indicator smoothly to active nav item
-  function moveIndicator(){
-    const active = document.querySelector('.nav-item.active');
-    if(!active) return;
-    const track = document.getElementById('navTrack');
-    const rect = active.getBoundingClientRect();
-    const trackRect = track.getBoundingClientRect();
-    const offset = rect.left - trackRect.left - 6; // account for padding
-    indicator.style.transform = `translateX(${offset}px)`;
-    // adjust width to active
-    indicator.style.width = `${rect.width + 12}px`;
-  }
-
-  // sections page
-  function renderSections(){
-    feedEl.classList.remove('hidden');
-    emptyState.classList.add('hidden');
-    feedEl.innerHTML = '';
-    const wrap = document.createElement('div'); wrap.style.width='100%';
-    const saved = state.feed.filter(s=>s.saved);
-    const secSaved = document.createElement('section'); secSaved.innerHTML = `<h3>Сохранённые</h3>`;
-    if(saved.length===0){
-      secSaved.innerHTML += `<p class="muted">Пока нет сохранённых материалов.</p>`;
-    } else {
-      saved.forEach(it=>{
-        const r = document.createElement('div'); r.className='card'; r.style.marginBottom='8px';
-        r.innerHTML = `<h4>${it.title}</h4><div class="meta">${it.date} • ${it.type}</div>`;
-        const uns = document.createElement('button'); uns.className='btn'; uns.textContent='Убрать'; uns.addEventListener('click', ()=>{ it.saved=false; localSave(); render(); });
-        r.appendChild(uns);
-        secSaved.appendChild(r);
-      });
-    }
-    wrap.appendChild(secSaved);
-    // example categories placeholder
-    const categories = document.createElement('section'); categories.innerHTML = `<h3>Категории</h3><div class="card"><h4>Современная музыка</h4><p class="meta">Артисты, жанры, обзоры</p></div><div class="card"><h4>Артисты</h4><p class="meta">Интервью и профили</p></div>`;
-    wrap.appendChild(categories);
-    feedEl.appendChild(wrap);
-  }
-
-  // local persistence
-  function localSave(){
-    try{
-      localStorage.setItem('demo_feed', JSON.stringify(state.feed));
-    }catch(e){}
-  }
-  function localLoad(){
-    try{
-      const raw = localStorage.getItem('demo_feed');
-      if(raw){
-        const parsed = JSON.parse(raw);
-        // merge saved flags into state.feed by id
-        parsed.forEach(p=>{
-          const found = state.feed.find(x=>x.id===p.id);
-          if(found) found.saved = p.saved, found._hidden = p._hidden;
-        });
-      }
-    }catch(e){}
-  }
-  localLoad();
-  render();
-
-  // helpers for empty state
-  goArticles.addEventListener('click', ()=>{ state.tab='articles'; render(); });
-
-  </script>
-</body>
-</html>
+// ТЕСТ
+document.body.innerHTML += generateNewsCard({
+  title: "Твой стильный заголовок",
+  description: "Описание новости. Коротко, ёмко, без воды.",
+  image: "https://picsum.photos/700/400",
+  link: "#"
+});
+</script>
