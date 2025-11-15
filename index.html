@@ -87,7 +87,7 @@
       color: #fff;
       font-size: 14px;
       box-sizing: border-box;
-      margin-top: 40px;
+      margin-top: 120px;
       display: grid;
       gap: 14px;
     }
@@ -124,6 +124,18 @@
     .editor button:hover {
       background: #ffffff2d;
     }
+
+    #downloadBtn {
+      margin: 40px auto;
+      padding: 12px 24px;
+      font-size: 16px;
+      background: #ffffff1a;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -150,17 +162,7 @@
     <button onclick="applyChanges()">Применить</button>
   </div>
 
-  <button id="downloadBtn" style="
-    margin: 40px auto;
-    padding: 12px 24px;
-    font-size: 16px;
-    background: #ffffff1a;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    display: block;
-  ">Скачать для TikTok</button>
+  <button id="downloadBtn">Скачать для TikTok</button>
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
@@ -175,30 +177,13 @@
     }
 
     document.getElementById('downloadBtn').addEventListener('click', async () => {
-      // Создаём временный контейнер с фоном
-      const container = document.createElement('div');
-      container.style.width = '1080px';
-      container.style.height = '1920px';
-      container.style.background = getComputedStyle(document.body).background;
-      container.style.display = 'flex';
-      container.style.alignItems = 'center';
-      container.style.justifyContent = 'center';
-      container.style.position = 'absolute';
-      container.style.top = '-9999px';
-      document.body.appendChild(container);
-
-      // Клонируем карточку
-      const cardClone = document.querySelector('.card').cloneNode(true);
-      cardClone.style.width = '900px';
-      cardClone.style.height = '1600px';
-      container.appendChild(cardClone);
-
-      // Генерируем canvas
-      html2canvas(container, { scale: 1 }).then(canvas => {
+      const card = document.querySelector('.card');
+      html2canvas(card, { scale: 2, backgroundColor: null }).then(canvas => {
         canvas.toBlob(blob => {
-          const url = URL.createObjectURL(blob);
-          window.open(url, '_blank'); // откроется в новой вкладке, там зажать и сохранить в галерею
-          document.body.removeChild(container); // удаляем временный контейнер
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'fulthma_card.jpg';
+          link.click();
         }, 'image/jpeg', 0.95);
       });
     });
