@@ -2,150 +2,288 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Карточка — фултьма</title>
+  <title>Карточка на фоне — фултьма</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Iso&display=swap" rel="stylesheet">
   <style>
+    /* Фон на всю страницу */
+    html, body {
+      height: 100%;
+    }
     body {
       margin: 0;
-      padding: 0;
-      background: radial-gradient(1200px 600px at 70% 10%, #161821 0%, #0b0c10 55%, #07080b 100%);
-      font-family: 'Inter', sans-serif;
+      padding: 40px 0;
+      background:
+        radial-gradient(1200px 600px at 70% 10%, #161821 0%, #0b0c10 55%, #07080b 100%),
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
+      gap: 24px;
+      box-sizing: border-box;
     }
 
+    /* Контейнер карточки — не весь экран, а блок на фоне */
     .card {
       width: 1080px;
       height: 1920px;
-      background: transparent;
+      background: rgba(12, 13, 18, 0.85);
+      backdrop-filter: blur(2px);
       color: #f5f7fa;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 80px 100px;
       box-sizing: border-box;
-      overflow: hidden;
-      position: relative;
+      border-radius: 24px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.06);
+      overflow: hidden; /* контент внутри управляем вручную */
     }
 
+    /* Центровка контента строго по макету — без сдвигов */
+    .card-inner {
+      width: 100%;
+      max-width: 880px;
+    }
+
+    /* Логотип сверху карточки */
     .logo {
       font-family: 'Rubik Iso', sans-serif;
       font-size: 64px;
       color: #ffffff;
-      margin-bottom: 40px;
       text-align: center;
+      margin: 0 0 32px 0;
     }
 
+    /* Мета (дата) */
     .date {
       font-size: 20px;
       color: #a9b0be;
-      margin-bottom: 30px;
+      text-align: left;
+      margin: 0 0 24px 0;
     }
 
+    /* Заголовки */
     .title {
       font-size: 72px;
       font-weight: 700;
-      text-align: center;
-      margin-bottom: 20px;
+      line-height: 1.15;
+      text-align: left;
+      margin: 0 0 14px 0;
     }
-
     .subtitle {
       font-size: 32px;
       color: #a9b0be;
-      text-align: center;
-      margin-bottom: 60px;
+      text-align: left;
+      margin: 0 0 40px 0;
     }
 
+    /* Текст */
     .content {
       font-size: 36px;
       line-height: 1.6;
-      font-family: 'Georgia', serif;
+      font-family: Georgia, "Times New Roman", serif;
       text-align: left;
-      max-width: 880px;
     }
-
     .content p {
-      margin-bottom: 40px;
+      margin: 0 0 32px 0;
     }
 
+    /* Меню редактирования — отдельным блоком, не перекрывает карточку */
     .editor {
-      width: 1080px;
+      width: min(1080px, 92vw);
       background: #1a1c22;
-      padding: 30px;
-      border-radius: 20px;
+      padding: 24px;
+      border-radius: 16px;
       color: #fff;
       font-size: 14px;
       box-sizing: border-box;
-      margin-top: 40px;
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr 1fr;
     }
-
     .editor h3 {
-      margin-top: 0;
+      grid-column: 1 / -1;
+      margin: 0 0 6px 0;
       font-size: 18px;
-      margin-bottom: 20px;
     }
-
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field label {
+      font-size: 13px;
+      color: #cfd5df;
+    }
+    .editor input,
+    .editor textarea,
+    .editor button,
+    .editor .checks {
+      border-radius: 10px;
+    }
     .editor input,
     .editor textarea {
       width: 100%;
-      margin-bottom: 16px;
       padding: 12px;
-      border-radius: 10px;
-      border: none;
-      font-size: 16px;
+      border: 1px solid rgba(255,255,255,0.14);
       background: #101217;
       color: #fff;
+      font-size: 16px;
       box-sizing: border-box;
     }
-
+    .editor textarea {
+      grid-column: 1 / -1;
+      min-height: 140px;
+      resize: vertical;
+    }
+    .checks {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      padding: 10px 0 0 0;
+      color: #e8ecf2;
+      font-size: 14px;
+    }
     .editor button {
-      padding: 12px 24px;
-      background: #ffffff12;
+      grid-column: 1 / -1;
+      justify-self: end;
+      padding: 10px 18px;
+      background: #ffffff1a;
       color: #fff;
-      border: none;
-      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.22);
       cursor: pointer;
-      font-size: 16px;
+      font-size: 15px;
+    }
+    .editor button:hover {
+      background: #ffffff2d;
     }
 
-    .editor button:hover {
-      background: #ffffff25;
+    /* Адаптив меню, чтобы ничего не обрезалось */
+    @media (max-width: 1200px) {
+      .editor {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo" id="logoText">фултьма</div>
-    <div class="date" id="dateText">15 ноября 2025</div>
-    <div class="title" id="titleText">Идейные выводы</div>
-    <div class="subtitle" id="subtitleText">Банальные, но непровержимые</div>
-    <div class="content" id="contentText">
-      <p>Банальные, но непровержимые выводы, а также явные признаки подмены институциональности и по сей день остаются уделом либералов, которые жаждут быть ассоциативно распределены по отраслям.</p>
-      <p>Идейные сообщения высшего порядка, а также граница обучения кадров прекрасно подходят для реализации своевременного выполнения сверхзадач.</p>
+  <!-- Карточка на фоне (фон — body) -->
+  <section class="card" aria-label="Карточка на фоне">
+    <div class="card-inner">
+      <div class="logo" id="logoView">фултьма</div>
+      <div class="date" id="dateView">15 ноября 2025</div>
+      <h1 class="title" id="titleView">Идейные выводы</h1>
+      <p class="subtitle" id="subtitleView">Банальные, но непровержимые</p>
+      <div class="content" id="contentView">
+        <p>Банальные, но непроверимые выводы, а также явные признаки подмены институциональности и по сей день остаются уделом либералов, которые жаждут быть ассоциативно распределены по отраслям.</p>
+        <p>Идейные сообщения высшего порядка, а также граница обучения кадров прекрасно подходят для реализации своевременного выполнения сверхзадач.</p>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="editor">
+  <!-- Меню редактирования — отдельно, под карточкой -->
+  <section class="editor" aria-label="Меню редактирования">
     <h3>Редактировать карточку</h3>
-    <input type="text" id="logoInput" placeholder="Логотип" />
-    <input type="text" id="dateInput" placeholder="Дата" />
-    <input type="text" id="titleInput" placeholder="Заголовок" />
-    <input type="text" id="subtitleInput" placeholder="Подзаголовок" />
-    <textarea id="contentInput" placeholder="Текст (абзацы через пустую строку)"></textarea>
-    <button onclick="applyChanges()">Применить</button>
-  </div>
+
+    <div class="field">
+      <label for="logoInput">Логотип</label>
+      <input id="logoInput" type="text" placeholder="фултьма" />
+    </div>
+
+    <div class="field">
+      <label for="dateInput">Дата</label>
+      <input id="dateInput" type="date" />
+    </div>
+
+    <div class="field">
+      <label for="titleInput">Заголовок</label>
+      <input id="titleInput" type="text" placeholder="Идейные выводы" />
+    </div>
+
+    <div class="field">
+      <label for="subtitleInput">Подзаголовок</label>
+      <input id="subtitleInput" type="text" placeholder="Банальные, но непровержимые" />
+    </div>
+
+    <div class="checks">
+      <label><input id="toggleTitle" type="checkbox" checked /> показать заголовок</label>
+      <label><input id="toggleSubtitle" type="checkbox" checked /> показать подзаголовок</label>
+      <label><input id="toggleLogo" type="checkbox" checked /> показать логотип</label>
+    </div>
+
+    <div class="field" style="grid-column: 1 / -1;">
+      <label for="contentInput">Текст (абзацы через пустую строку)</label>
+      <textarea id="contentInput" placeholder="Вставь текст. Пустая строка = новый абзац."></textarea>
+    </div>
+
+    <button id="applyBtn">Применить</button>
+  </section>
 
   <script>
-    function applyChanges() {
-      document.getElementById('logoText').textContent = document.getElementById('logoInput').value || 'фултьма';
-      document.getElementById('dateText').textContent = document.getElementById('dateInput').value || 'Сегодня';
-      document.getElementById('titleText').textContent = document.getElementById('titleInput').value || 'Заголовок';
-      document.getElementById('subtitleText').textContent = document.getElementById('subtitleInput').value || '';
-      const raw = document.getElementById('contentInput').value.trim();
-      const paragraphs = raw.split(/\n{2,}/).map(p => `<p>${p}</p>`).join('');
-      document.getElementById('contentText').innerHTML = paragraphs || '<p>Текст отсутствует.</p>';
+    // Элементы ввода
+    const logoInput = document.getElementById('logoInput');
+    const dateInput = document.getElementById('dateInput');
+    const titleInput = document.getElementById('titleInput');
+    const subtitleInput = document.getElementById('subtitleInput');
+    const contentInput = document.getElementById('contentInput');
+
+    const toggleTitle = document.getElementById('toggleTitle');
+    const toggleSubtitle = document.getElementById('toggleSubtitle');
+    const toggleLogo = document.getElementById('toggleLogo');
+
+    const applyBtn = document.getElementById('applyBtn');
+
+    // Элементы вывода
+    const logoView = document.getElementById('logoView');
+    const dateView = document.getElementById('dateView');
+    const titleView = document.getElementById('titleView');
+    const subtitleView = document.getElementById('subtitleView');
+    const contentView = document.getElementById('contentView');
+
+    function formatDateISOToRU(iso) {
+      if (!iso) return 'Сегодня';
+      const d = new Date(iso);
+      return d.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' });
     }
+
+    function escapeHTML(str) {
+      return str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+    }
+
+    function applyChanges() {
+      // Логотип
+      const logoText = (logoInput.value || 'фултьма').trim();
+      logoView.textContent = logoText;
+      logoView.style.display = toggleLogo.checked ? 'block' : 'none';
+
+      // Дата
+      dateView.textContent = formatDateISOToRU(dateInput.value);
+
+      // Заголовок
+      const titleText = (titleInput.value || 'Идейные выводы').trim();
+      titleView.textContent = titleText;
+      titleView.style.display = toggleTitle.checked ? 'block' : 'none';
+
+      // Подзаголовок
+      const subtitleText = (subtitleInput.value || '').trim();
+      subtitleView.textContent = subtitleText;
+      subtitleView.style.display = toggleSubtitle.checked && subtitleText ? 'block' : 'none';
+
+      // Контент
+      const raw = (contentInput.value || '').trim();
+      const paragraphs = raw
+        ? raw.split(/\n{2,}|\r\n{2,}/).map(s => s.trim()).filter(Boolean)
+        : [];
+      contentView.innerHTML = paragraphs.length
+        ? paragraphs.map(p => `<p>${escapeHTML(p)}</p>`).join('')
+        : '<p>Текст отсутствует.</p>';
+    }
+
+    applyBtn.addEventListener('click', applyChanges);
   </script>
 </body>
 </html>
