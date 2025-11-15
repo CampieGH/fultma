@@ -178,12 +178,30 @@
 
     document.getElementById('downloadBtn').addEventListener('click', async () => {
       const card = document.querySelector('.card');
-      html2canvas(card, { scale: 2, backgroundColor: null }).then(canvas => {
+
+      // создаём временный контейнер с border-radius
+      const container = document.createElement('div');
+      container.style.width = card.offsetWidth + 'px';
+      container.style.height = card.offsetHeight + 'px';
+      container.style.borderRadius = '24px';
+      container.style.overflow = 'hidden';
+      container.style.position = 'absolute';
+      container.style.top = '-9999px';
+      container.style.left = '-9999px';
+      container.style.background = 'transparent';
+      document.body.appendChild(container);
+
+      const clone = card.cloneNode(true);
+      clone.style.margin = '0';
+      container.appendChild(clone);
+
+      html2canvas(container, { scale: 2, backgroundColor: null }).then(canvas => {
         canvas.toBlob(blob => {
           const link = document.createElement('a');
           link.href = URL.createObjectURL(blob);
           link.download = 'fulthma_card.jpg';
           link.click();
+          document.body.removeChild(container);
         }, 'image/jpeg', 0.95);
       });
     });
