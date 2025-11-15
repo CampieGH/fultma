@@ -2,116 +2,146 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Карточка TikTok — фултьма</title>
+  <title>Карточка — фултьма</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Iso&display=swap" rel="stylesheet">
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background: #0b0c10;
-      font-family: 'Inter', sans-serif;
-      height: 100%;
+      background: #000;
       display: flex;
       justify-content: center;
       align-items: center;
+      height: 100vh;
     }
 
     .card {
       width: 1080px;
       height: 1920px;
-      background: linear-gradient(180deg, #121317 0%, #0b0c10 100%);
+      background: radial-gradient(1200px 600px at 70% 10%, #161821 0%, #0b0c10 55%, #07080b 100%);
       color: #f5f7fa;
+      font-family: 'Inter', sans-serif;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
       align-items: center;
-      padding: 60px 80px;
+      padding: 80px 100px;
       box-sizing: border-box;
-      border-radius: 24px;
-      box-shadow: 0 0 40px rgba(0,0,0,0.5);
       overflow: hidden;
       position: relative;
     }
 
     .logo {
       font-family: 'Rubik Iso', sans-serif;
-      font-size: 48px;
+      font-size: 64px;
       color: #ffffff;
       margin-bottom: 40px;
       text-align: center;
     }
 
-    .meta {
-      font-size: 18px;
+    .date {
+      font-size: 20px;
       color: #a9b0be;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
 
     .title {
-      font-size: 64px;
+      font-size: 72px;
       font-weight: 700;
       text-align: center;
       margin-bottom: 20px;
     }
 
     .subtitle {
-      font-size: 28px;
+      font-size: 32px;
       color: #a9b0be;
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 60px;
     }
 
     .content {
-      font-size: 32px;
+      font-size: 36px;
       line-height: 1.6;
       font-family: 'Georgia', serif;
       text-align: left;
       max-width: 880px;
     }
 
-    .actions {
+    .content p {
+      margin-bottom: 40px;
+    }
+
+    .editor {
       position: absolute;
-      bottom: 60px;
-      display: flex;
-      gap: 20px;
+      top: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.6);
+      padding: 20px;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 14px;
+      max-width: 400px;
     }
 
-    .btn {
+    .editor input, .editor textarea {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
       background: #1a1c22;
-      color: #ffffff;
-      border: 1px solid rgba(255,255,255,0.2);
-      padding: 20px 40px;
-      font-size: 24px;
-      border-radius: 14px;
+      color: #fff;
+    }
+
+    .editor button {
+      padding: 10px 20px;
+      background: #ffffff12;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
       cursor: pointer;
-      transition: background 0.2s ease;
+      margin-top: 10px;
     }
 
-    .btn:hover {
-      background: #23262d;
-    }
-
-    .btn--danger {
-      background: #2a1b1b;
-      color: #ffb9b9;
-      border-color: rgba(227, 107, 107, 0.45);
+    .editor h3 {
+      margin-top: 0;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="logo">фултьма</div>
-    <div class="meta">15 ноября 2025</div>
-    <div class="title">Идейные выводы</div>
-    <div class="subtitle">Банальные, но непровержимые</div>
-    <div class="content">
+    <div class="logo" id="logoText">фултьма</div>
+    <div class="date" id="dateText">15 ноября 2025</div>
+    <div class="title" id="titleText">Идейные выводы</div>
+    <div class="subtitle" id="subtitleText">Банальные, но непровержимые</div>
+    <div class="content" id="contentText">
       <p>Банальные, но непровержимые выводы, а также явные признаки победы институционализации и по сей день остаются уделом либералов, которые жаждут быть ассоциативно распределены по отраслям.</p>
-      <p>Идейные соображения высшего порядка, а также границы обучения гораздо прекрасно подходят для реализации своевременного выполнения сверхзадачи.</p>
+      <p>Идейные соображения высшего порядка, а также границы обучения кадров прекрасно подходят для реализации своевременного выполнения сверхзадачи.</p>
     </div>
-    <div class="actions">
-      <button class="btn">читать полностью</button>
-      <button class="btn btn--danger">неинтересно</button>
+
+    <!-- Редактор -->
+    <div class="editor">
+      <h3>Редактировать карточку</h3>
+      <input type="text" id="logoInput" placeholder="Логотип" />
+      <input type="text" id="dateInput" placeholder="Дата" />
+      <input type="text" id="titleInput" placeholder="Заголовок" />
+      <input type="text" id="subtitleInput" placeholder="Подзаголовок" />
+      <textarea id="contentInput" placeholder="Текст (абзацы через пустую строку)"></textarea>
+      <button onclick="applyChanges()">Применить</button>
     </div>
   </div>
+
+  <script>
+    function applyChanges() {
+      document.getElementById('logoText').textContent = document.getElementById('logoInput').value || 'фултьма';
+      document.getElementById('dateText').textContent = document.getElementById('dateInput').value || 'Сегодня';
+      document.getElementById('titleText').textContent = document.getElementById('titleInput').value || 'Заголовок';
+      document.getElementById('subtitleText').textContent = document.getElementById('subtitleInput').value || '';
+      const raw = document.getElementById('contentInput').value.trim();
+      const paragraphs = raw.split(/\n{2,}/).map(p => `<p>${p}</p>`).join('');
+      document.getElementById('contentText').innerHTML = paragraphs || '<p>Текст отсутствует.</p>';
+    }
+  </script>
 </body>
 </html>
