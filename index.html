@@ -5,14 +5,14 @@
   <title>Карточка — фултьма</title>
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Iso&display=swap" rel="stylesheet">
   <style>
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
+      padding: 40px;
       background: #000;
+      font-family: 'Inter', sans-serif;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      height: 100vh;
     }
 
     .card {
@@ -20,14 +20,13 @@
       height: 1920px;
       background: radial-gradient(1200px 600px at 70% 10%, #161821 0%, #0b0c10 55%, #07080b 100%);
       color: #f5f7fa;
-      font-family: 'Inter', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 80px 100px;
       box-sizing: border-box;
       overflow: hidden;
-      position: relative;
+      margin-bottom: 40px;
     }
 
     .logo {
@@ -71,41 +70,46 @@
     }
 
     .editor {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: rgba(0,0,0,0.6);
-      padding: 20px;
-      border-radius: 16px;
+      width: 1080px;
+      background: #1a1c22;
+      padding: 30px;
+      border-radius: 20px;
       color: #fff;
       font-size: 14px;
-      max-width: 400px;
+      box-sizing: border-box;
     }
 
-    .editor input, .editor textarea {
+    .editor h3 {
+      margin-top: 0;
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+
+    .editor input,
+    .editor textarea {
       width: 100%;
-      margin-bottom: 10px;
-      padding: 8px;
-      border-radius: 8px;
+      margin-bottom: 16px;
+      padding: 12px;
+      border-radius: 10px;
       border: none;
-      font-size: 14px;
-      background: #1a1c22;
+      font-size: 16px;
+      background: #101217;
       color: #fff;
+      box-sizing: border-box;
     }
 
     .editor button {
-      padding: 10px 20px;
+      padding: 12px 24px;
       background: #ffffff12;
       color: #fff;
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      margin-top: 10px;
+      font-size: 16px;
     }
 
-    .editor h3 {
-      margin-top: 0;
-      font-size: 16px;
+    .editor button:hover {
+      background: #ffffff25;
     }
   </style>
 </head>
@@ -119,17 +123,16 @@
       <p>Банальные, но непровержимые выводы, а также явные признаки победы институционализации и по сей день остаются уделом либералов, которые жаждут быть ассоциативно распределены по отраслям.</p>
       <p>Идейные соображения высшего порядка, а также границы обучения кадров прекрасно подходят для реализации своевременного выполнения сверхзадачи.</p>
     </div>
+  </div>
 
-    <!-- Редактор -->
-    <div class="editor">
-      <h3>Редактировать карточку</h3>
-      <input type="text" id="logoInput" placeholder="Логотип" />
-      <input type="text" id="dateInput" placeholder="Дата" />
-      <input type="text" id="titleInput" placeholder="Заголовок" />
-      <input type="text" id="subtitleInput" placeholder="Подзаголовок" />
-      <textarea id="contentInput" placeholder="Текст (абзацы через пустую строку)"></textarea>
-      <button onclick="applyChanges()">Применить</button>
-    </div>
+  <div class="editor">
+    <h3>Редактировать карточку</h3>
+    <input type="text" id="logoInput" placeholder="Логотип" />
+    <input type="text" id="dateInput" placeholder="Дата" />
+    <input type="text" id="titleInput" placeholder="Заголовок" />
+    <input type="text" id="subtitleInput" placeholder="Подзаголовок" />
+    <textarea id="contentInput" placeholder="Текст (абзацы через пустую строку)"></textarea>
+    <button onclick="applyChanges()">Применить</button>
   </div>
 
   <script>
