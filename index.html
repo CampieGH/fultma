@@ -1,148 +1,414 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>Apple-style News Card</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-  body {
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #121212;
-    font-family: 'Inter', sans-serif;
-    overflow: hidden;
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Карточка — фултьма</title>
+  <style>
+    :root {
+      /* Палитра и типографика */
+      --bg: #0b0c10;             /* общий фон */
+      --card-bg: #121317;        /* фон карточки */
+      --text: #f5f7fa;           /* основной текст */
+      --muted: #a9b0be;          /* вторичный текст */
+      --accent: #ffffff;         /* яркий (кнопки/логотип) */
+      --danger: #e36b6b;         /* негативная кнопка */
+      --button-bg: #1a1c22;
+      --button-hover: #23262d;
 
-  /* Размытые круги на фоне */
-  .blur-circle {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(100px);
-    opacity: 0.3;
-    animation: float 20s infinite alternate;
-  }
-  .circle1 { width: 400px; height: 400px; background: #ff4d6d; top: -100px; left: -100px; }
-  .circle2 { width: 300px; height: 300px; background: #4d79ff; bottom: -100px; right: -50px; }
-  @keyframes float {
-    0% { transform: translate(0,0); }
-    100% { transform: translate(50px,50px); }
-  }
+      --radius-xl: 22px;
+      --radius-md: 12px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
 
-  /* Карточка Liquid Glass */
-  #card {
-    position: relative;
-    width: 400px;
-    min-height: 500px;
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(15px);
-    border-radius: 25px;
-    padding: 30px 25px 25px 25px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: #fff;
-    text-align: center;
-  }
+      --logo-font: "IBM Plex Serif", serif; /* замени на фирменный шрифт логотипа */
+      --ui-font: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      --reading-font: "IBM Plex Serif", Georgia, "Times New Roman", serif;
 
-  #logo {
-    width: 120px;
-    margin-bottom: 20px;
-  }
+      --line-height: 1.6;
+      --content-max: 780px;
+    }
 
-  #text {
-    font-size: 18px;
-    font-weight: 500;
-    line-height: 1.5;
-    outline: none;
-    margin-bottom: 20px;
-  }
+    /* Базовая раскладка */
+    html, body {
+      height: 100%;
+      background: radial-gradient(1200px 600px at 70% 10%, #161821 0%, #0b0c10 55%, #07080b 100%),
+                  linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+      color: var(--text);
+      font-family: var(--ui-font);
+      margin: 0;
+    }
 
-  #date {
-    font-size: 14px;
-    font-weight: 400;
-    color: #bbb;
-  }
+    .page {
+      min-height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      padding: 28px 20px 40px;
+    }
 
-  #controls {
-    margin-top: 20px;
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+    /* Логотип сверху */
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 22px;
+      user-select: none;
+    }
+    .brand__mark {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 18px rgba(255,255,255,0.25);
+    }
+    .brand__name {
+      font-family: var(--logo-font);
+      font-size: 22px;
+      letter-spacing: 0.6px;
+      color: var(--accent);
+      text-transform: none; /* логотип как текст: «фултьма» */
+    }
 
-  input[type="file"] { display: none; }
+    /* Карточка контента */
+    .card {
+      max-width: var(--content-max);
+      margin: 0 auto;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)) , var(--card-bg);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
 
-  label {
-    cursor: pointer;
-    background: #4caf50;
-    padding: 10px 15px;
-    border-radius: 10px;
-    color: white;
-    font-weight: 600;
-  }
+    .card__meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 22px;
+      font-size: 14px;
+      color: var(--muted);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
 
-  #downloadBtn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 10px;
-    background: #2196f3;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-  }
-</style>
+    .card__titles {
+      padding: 20px 22px 6px;
+    }
+    .subtitle-above {
+      font-size: 14px;
+      color: var(--muted);
+      margin: 0 0 8px 0;
+    }
+    .title {
+      font-size: clamp(22px, 3.4vw, 30px);
+      font-weight: 600;
+      margin: 0 0 8px 0;
+      color: var(--text);
+    }
+    .subtitle {
+      font-size: 15px;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .card__content {
+      padding: 16px 22px 8px;
+      font-family: var(--reading-font);
+      line-height: var(--line-height);
+      font-size: 17px;
+    }
+    .card__content p {
+      margin: 0 0 14px 0;
+    }
+
+    .card__actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 16px 16px 18px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.12);
+    }
+    .btn {
+      background: var(--button-bg);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.02s ease, border-color 0.2s ease;
+    }
+    .btn:hover {
+      background: var(--button-hover);
+      border-color: rgba(255,255,255,0.16);
+    }
+    .btn:active {
+      transform: translateY(1px);
+    }
+    .btn--accent {
+      background: #ffffff12;
+      color: var(--accent);
+      border-color: rgba(255,255,255,0.22);
+    }
+    .btn--danger {
+      background: #2a1b1b;
+      color: #ffb9b9;
+      border-color: rgba(227, 107, 107, 0.45);
+    }
+
+    /* Панель настроек (редактор) */
+    .panel {
+      max-width: var(--content-max);
+      margin: 0 auto 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .panel__grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .panel label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: block;
+    }
+    .panel input[type="text"],
+    .panel input[type="date"],
+    .panel textarea {
+      width: 100%;
+      background: #101217;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: var(--ui-font);
+      font-size: 14px;
+    }
+    .panel textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    .panel .row {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .panel .row .check {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .panel__actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+
+    /* Адаптивность */
+    @media (max-width: 560px) {
+      .panel__grid {
+        grid-template-columns: 1fr;
+      }
+      .card__actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div class="page">
+    <!-- ЛОГОТИП «фултьма» -->
+    <header class="brand" aria-label="Логотип">
+      <div class="brand__mark" aria-hidden="true"></div>
+      <div class="brand__name">фултьма</div>
+    </header>
 
-<!-- Размытые круги -->
-<div class="blur-circle circle1"></div>
-<div class="blur-circle circle2"></div>
+    <!-- ПАНЕЛЬ НАСТРОЕК -->
+    <section class="panel" aria-label="Настройки карточки">
+      <div class="panel__grid">
+        <div>
+          <label for="titleInput">Заголовок</label>
+          <input id="titleInput" type="text" placeholder="Введите заголовок" />
+        </div>
+        <div>
+          <label for="subtitleAboveInput">Подзаголовок над заголовком</label>
+          <input id="subtitleAboveInput" type="text" placeholder="Например, рубрика или тема" />
+        </div>
+        <div>
+          <label for="subtitleInput">Подзаголовок</label>
+          <input id="subtitleInput" type="text" placeholder="Краткое пояснение" />
+        </div>
+        <div>
+          <label for="dateInput">Дата (если пусто — сегодня)</label>
+          <input id="dateInput" type="date" />
+        </div>
+      </div>
 
-<div id="card">
-  <img id="logo" src="" alt="Лого">
-  <div id="text" contenteditable="true">Напиши сюда текст новости...</div>
-  <div id="date" contenteditable="true">15 ноября 2025</div>
-</div>
+      <div>
+        <label for="contentInput">Текст</label>
+        <textarea id="contentInput" placeholder="Основной текст статьи"></textarea>
+      </div>
 
-<div id="controls">
-  <label for="logoInput">Загрузить лого</label>
-  <input type="file" id="logoInput" accept="image/*">
-  <button id="downloadBtn">Скачать JPG</button>
-</div>
+      <div class="row">
+        <label class="check">
+          <input id="toggleTitle" type="checkbox" checked />
+          Показать заголовок
+        </label>
+        <label class="check">
+          <input id="toggleSubtitleAbove" type="checkbox" />
+          Показать подзаголовок над заголовком
+        </label>
+        <label class="check">
+          <input id="toggleSubtitle" type="checkbox" />
+          Показать подзаголовок
+        </label>
+      </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script>
-  // Загрузка лого
-  const logoInput = document.getElementById('logoInput');
-  const logoImg = document.getElementById('logo');
-  logoInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if(file){
-      const reader = new FileReader();
-      reader.onload = function(event){
-        logoImg.src = event.target.result;
-      }
-      reader.readAsDataURL(file);
+      <div class="panel__actions">
+        <button class="btn btn--accent" id="applyBtn">Применить</button>
+        <button class="btn" id="resetBtn">Сброс</button>
+      </div>
+    </section>
+
+    <!-- КАРТОЧКА -->
+    <article class="card" aria-label="Карточка статьи">
+      <div class="card__meta">
+        <div class="meta__left">
+          <span id="dateView">Сегодня</span>
+        </div>
+        <div class="meta__right">
+          <!-- Можно добавить счетчики/иконки позже; сейчас пусто по запросу -->
+        </div>
+      </div>
+
+      <div class="card__titles">
+        <p class="subtitle-above" id="subtitleAboveView" style="display:none;"></p>
+        <h1 class="title" id="titleView" style="display:block;">Идейные выводы</h1>
+        <p class="subtitle" id="subtitleView" style="display:none;"></p>
+      </div>
+
+      <div class="card__content" id="contentView">
+        <p>Банальные, но непровержимые выводы, а также явные признаки победы институционализации по сей день остаются уделом либералов…</p>
+      </div>
+
+      <div class="card__actions">
+        <button class="btn btn--accent" id="readBtn">читать полностью</button>
+        <button class="btn btn--danger" id="skipBtn">неинтересно</button>
+      </div>
+    </article>
+  </div>
+
+  <script>
+    // Элементы ввода
+    const titleInput = document.getElementById('titleInput');
+    const subtitleInput = document.getElementById('subtitleInput');
+    const subtitleAboveInput = document.getElementById('subtitleAboveInput');
+    const dateInput = document.getElementById('dateInput');
+    const contentInput = document.getElementById('contentInput');
+
+    const toggleTitle = document.getElementById('toggleTitle');
+    const toggleSubtitle = document.getElementById('toggleSubtitle');
+    const toggleSubtitleAbove = document.getElementById('toggleSubtitleAbove');
+
+    const applyBtn = document.getElementById('applyBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // Элементы вывода
+    const titleView = document.getElementById('titleView');
+    const subtitleView = document.getElementById('subtitleView');
+    const subtitleAboveView = document.getElementById('subtitleAboveView');
+    const dateView = document.getElementById('dateView');
+    const contentView = document.getElementById('contentView');
+
+    // Формат даты по-русски
+    function formatDateISOToRU(iso) {
+      const d = iso ? new Date(iso) : new Date();
+      return d.toLocaleDateString('ru-RU', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
     }
-  });
 
-  // Скачать карточку как JPG
-  const btn = document.getElementById('downloadBtn');
-  btn.addEventListener('click', () => {
-    const card = document.getElementById('card');
-    html2canvas(card).then(canvas => {
-      const link = document.createElement('a');
-      link.download = 'news_card.jpg';
-      link.href = canvas.toDataURL("image/jpeg", 0.9);
-      link.click();
+    function applyState() {
+      // Заголовок
+      const title = titleInput.value.trim();
+      titleView.textContent = title || 'Без названия';
+      titleView.style.display = toggleTitle.checked ? 'block' : 'none';
+
+      // Подзаголовок над заголовком
+      const subtitleAbove = subtitleAboveInput.value.trim();
+      subtitleAboveView.textContent = subtitleAbove;
+      subtitleAboveView.style.display = (toggleSubtitleAbove.checked && subtitleAbove) ? 'block' : 'none';
+
+      // Подзаголовок под заголовком
+      const subtitle = subtitleInput.value.trim();
+      subtitleView.textContent = subtitle;
+      subtitleView.style.display = (toggleSubtitle.checked && subtitle) ? 'block' : 'none';
+
+      // Дата
+      const iso = dateInput.value;
+      dateView.textContent = iso ? formatDateISOToRU(iso) : 'Сегодня';
+
+      // Контент (разбиваем абзацы)
+      const raw = contentInput.value.trim();
+      const paragraphs = raw ? raw.split(/\n{2,}|\r\n{2,}/).map(s => s.trim()).filter(Boolean) : [];
+      if (paragraphs.length) {
+        contentView.innerHTML = paragraphs.map(p => `<p>${escapeHTML(p)}</p>`).join('');
+      } else {
+        contentView.innerHTML = `<p>Текст отсутствует.</p>`;
+      }
+    }
+
+    function escapeHTML(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function resetState() {
+      titleInput.value = '';
+      subtitleInput.value = '';
+      subtitleAboveInput.value = '';
+      dateInput.value = '';
+      contentInput.value = '';
+      toggleTitle.checked = true;
+      toggleSubtitle.checked = false;
+      toggleSubtitleAbove.checked = false;
+      applyState();
+    }
+
+    // Кнопки действий карточки (демо)
+    const readBtn = document.getElementById('readBtn');
+    const skipBtn = document.getElementById('skipBtn');
+
+    readBtn.addEventListener('click', () => {
+      // В демо — разворачиваем весь текст (можно заменить на реальную навигацию)
+      alert('Открыть полную статью');
     });
-  });
-</script>
 
+    skipBtn.addEventListener('click', () => {
+      alert('Отмечено как неинтересно');
+    });
+
+    applyBtn.addEventListener('click', applyState);
+    resetBtn.addEventListener('click', resetState);
+
+    // Первичная инициализация
+    applyState();
+  </script>
 </body>
 </html>
