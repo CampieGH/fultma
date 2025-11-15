@@ -2,53 +2,81 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Стильная карточка новости</title>
+<title>Apple-style News Card</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   body {
-    font-family: 'Poppins', sans-serif;
-    background: #1e1e1e;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #121212;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+  }
+
+  /* Размытые круги на фоне */
+  .blur-circle {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.3;
+    animation: float 20s infinite alternate;
+  }
+  .circle1 { width: 400px; height: 400px; background: #ff4d6d; top: -100px; left: -100px; }
+  .circle2 { width: 300px; height: 300px; background: #4d79ff; bottom: -100px; right: -50px; }
+  @keyframes float {
+    0% { transform: translate(0,0); }
+    100% { transform: translate(50px,50px); }
+  }
+
+  /* Карточка Liquid Glass */
+  #card {
+    position: relative;
+    width: 400px;
+    min-height: 500px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(15px);
+    border-radius: 25px;
+    padding: 30px 25px 25px 25px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 50px;
     color: #fff;
-  }
-  #card {
-    width: 450px;
-    padding: 25px 30px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, #ff4d6d, #ff7f50);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
     text-align: center;
-    position: relative;
-    min-height: 200px;
   }
+
   #logo {
-    width: 70px;
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    border-radius: 10px;
+    width: 120px;
+    margin-bottom: 20px;
   }
+
   #text {
-    margin-top: 40px;
-    font-size: 20px;
-    line-height: 1.5;
+    font-size: 18px;
     font-weight: 500;
-    word-wrap: break-word;
+    line-height: 1.5;
     outline: none;
-    color: #fff;
+    margin-bottom: 20px;
   }
+
+  #date {
+    font-size: 14px;
+    font-weight: 400;
+    color: #bbb;
+  }
+
   #controls {
-    margin-top: 25px;
+    margin-top: 20px;
     display: flex;
     gap: 15px;
     flex-wrap: wrap;
     justify-content: center;
   }
-  input[type="file"] {
-    display: none;
-  }
+
+  input[type="file"] { display: none; }
+
   label {
     cursor: pointer;
     background: #4caf50;
@@ -57,6 +85,7 @@
     color: white;
     font-weight: 600;
   }
+
   #downloadBtn {
     padding: 10px 20px;
     border: none;
@@ -69,10 +98,15 @@
 </style>
 </head>
 <body>
-<h2>Редактор карточки новости</h2>
+
+<!-- Размытые круги -->
+<div class="blur-circle circle1"></div>
+<div class="blur-circle circle2"></div>
+
 <div id="card">
   <img id="logo" src="" alt="Лого">
   <div id="text" contenteditable="true">Напиши сюда текст новости...</div>
+  <div id="date" contenteditable="true">15 ноября 2025</div>
 </div>
 
 <div id="controls">
@@ -109,5 +143,6 @@
     });
   });
 </script>
+
 </body>
 </html>
