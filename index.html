@@ -162,5 +162,36 @@
       document.getElementById('contentView').innerHTML = paragraphs || '<p>Текст отсутствует.</p>';
     }
   </script>
+  <!-- Вставляем этот блок прямо перед закрывающим </body> -->
+
+<button id="downloadBtn" style="
+  margin: 40px auto;
+  padding: 12px 24px;
+  font-size: 16px;
+  background: #ffffff1a;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  display: block;
+">Скачать для TikTok</button>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+  document.getElementById('downloadBtn').addEventListener('click', () => {
+    // Генерируем всю страницу (фон + карточка)
+    html2canvas(document.body, {
+      width: 1080,
+      height: 1920,
+      scale: 2
+    }).then(canvas => {
+      canvas.toBlob(function(blob) {
+        const url = URL.createObjectURL(blob);
+        // Открываем в новой вкладке для сохранения на iPhone
+        window.open(url, '_blank');
+      }, 'image/jpeg', 0.95);
+    });
+  });
+</script>
 </body>
 </html>
