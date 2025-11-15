@@ -162,9 +162,7 @@
       document.getElementById('contentView').innerHTML = paragraphs || '<p>Текст отсутствует.</p>';
     }
   </script>
-  <!-- Вставляем этот блок прямо перед закрывающим </body> -->
-
-<button id="downloadBtn" style="
+  <button id="downloadBtn" style="
   margin: 40px auto;
   padding: 12px 24px;
   font-size: 16px;
@@ -178,20 +176,32 @@
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
-  document.getElementById('downloadBtn').addEventListener('click', () => {
-    // Генерируем всю страницу (фон + карточка)
-    html2canvas(document.body, {
-      width: 1080,
-      height: 1920,
-      scale: 2
-    }).then(canvas => {
-      canvas.toBlob(function(blob) {
-        const url = URL.createObjectURL(blob);
-        // Открываем в новой вкладке для сохранения на iPhone
-        window.open(url, '_blank');
-      }, 'image/jpeg', 0.95);
-    });
-  });
+document.getElementById('downloadBtn').addEventListener('click', async () => {
+  const container = document.createElement('div');
+  container.style.width = '1080px';
+  container.style.height = '1920px';
+  container.style.background = getComputedStyle(document.body).background;
+  container.style.position = 'relative';
+  container.style.fontFamily = 'Inter, sans-serif';
+  container.style.display = 'flex';
+  container.style.alignItems = 'center';
+  container.style.justifyContent = 'center';
+  
+  // Клонируем карточку
+  const cardClone = document.querySelector('.card').cloneNode(true);
+  cardClone.style.width = '900px'; // чуть меньше чем 1080px
+  cardClone.style.height = '1600px'; // чуть меньше чем 1920px
+  container.appendChild(cardClone);
+  document.body.appendChild(container);
+
+  // Генерируем canvas
+  const canvas = await html2canvas(container, { scale: 1 });
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank'); // откроется в новой вкладке для сохранения
+    document.body.removeChild(container); // убираем временный контейнер
+  }, 'image/jpeg', 0.95);
+});
 </script>
 </body>
 </html>
