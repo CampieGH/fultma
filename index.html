@@ -1,297 +1,217 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Canvas: карточка с кругами</title>
+  <meta charset="UTF-8" />
+  <title>Карточка — фултьма</title>
 
-  <!-- Шрифты (подгружаем, чтобы текст выглядел аккуратно) -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Rubik+Iso&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <!-- Подключил Inter и Roboto -->
+  <link href="https://fonts.googleapis.com/css2?family=Rubik+Iso&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
-    :root{--w:1080;--h:1920}
-    html,body{
-      height:100%;
-      margin:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:#07080b;
-      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-      color:#fff;
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(400px 400px at 50% 5%, rgba(255,255,255,0.15), transparent),
+        radial-gradient(400px 400px at 20% 30%, rgba(255,255,255,0.17), transparent),
+        radial-gradient(300px 300px at 80% 20%, rgba(255,255,255,0.13), transparent),
+        radial-gradient(500px 500px at 50% 60%, rgba(255,255,255,0.18), transparent),
+        linear-gradient(180deg, #0b0c10 0%, #07080b 100%);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .wrap{
-      width:360px; /* просто превью в браузере */
-      box-shadow:0 10px 30px rgba(0,0,0,0.6);
-      border-radius:20px;
-      overflow:hidden;
-      background:#000;
+
+    .card {
+      width: 540px;
+      height: 960px;
+      background: rgba(12, 13, 18, 0.85);
+      backdrop-filter: blur(2px);
+      color: #f5f7fa;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 50px;
+      box-sizing: border-box;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.06);
+      overflow: hidden;
+      margin-top: 80px;
     }
-    canvas{display:block; width:100%; height:auto; background:transparent;}
-    .controls{
-      display:flex;
-      gap:8px;
-      padding:12px;
-      justify-content:center;
-      background:#0f1113;
+
+    .card-inner {
+      width: 100%;
+      max-width: 440px;
     }
-    button{
-      padding:10px 14px;
-      border-radius:10px;
-      border:none;
-      background:#ffffff12;
-      color:#fff;
-      cursor:pointer;
-      font-weight:600;
+
+    .logo {
+      font-family: 'Rubik Iso', sans-serif;
+      font-size: 36px;
+      color: #ffffff;
+      text-align: center;
+      margin-bottom: 24px;
     }
-    button:active{transform:translateY(1px)}
-    .note{font-size:12px;color:#a9aeb8;text-align:center;padding:10px 12px;}
+
+    .date {
+      font-size: 14px;
+      color: #a9b0be;
+      margin-bottom: 20px;
+    }
+
+    .title {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: #a9b0be;
+      margin-bottom: 30px;
+    }
+
+    .content {
+      font-size: 22px;
+      line-height: 1.5;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .content p {
+      margin-bottom: 24px;
+    }
+
+    .editor {
+      width: min(540px, 92vw);
+      background: #1a1c22;
+      padding: 24px;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 14px;
+      box-sizing: border-box;
+      margin-top: 120px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .editor h3 {
+      margin-top: 0;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .editor input,
+    .editor textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      font-size: 15px;
+      background: #101217;
+      color: #fff;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+    }
+
+    .editor button {
+      padding: 10px 20px;
+      background: #ffffff1a;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .editor button:hover {
+      background: #ffffff2d;
+    }
+
+    #downloadBtn {
+      margin: 40px auto;
+      padding: 12px 24px;
+      font-size: 16px;
+      background: #ffffff1a;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      display: block;
+    }
   </style>
 </head>
 <body>
-
-  <div class="wrap">
-    <canvas id="cardCanvas" width="540" height="960"></canvas>
-    <div class="controls">
-      <button id="downloadBtn">Скачать PNG</button>
-      <button id="openBtn">Открыть (iPhone → удержать → Сохранить)</button>
+  <div class="card">
+    <div class="card-inner">
+      <div class="logo" id="logoView">фултьма</div>
+      <div class="date" id="dateView">15 ноября 2025</div>
+      <h1 class="title" id="titleView">Идейные выводы</h1>
+      <p class="subtitle" id="subtitleView">Банальные, но непровержимые</p>
+      <div class="content" id="contentView">
+        <p>Банальные, но неопровержимые выводы, а также явные признаки подмены институциональности и по сей день остаются уделом либералов, которые жаждут быть ассоциативно распределены по отраслям.</p>
+        <p>Идейные сообщения высшего порядка, а также граница обучения кадров прекрасно подходят для реализации своевременного выполнения сверхзадач.</p>
+      </div>
     </div>
-    <div class="note">Размер превью 540×960. Скачивается 1080×1920 PNG (retina).</div>
   </div>
 
-<script>
-(async function(){
-  // Параметры итогового изображения (фулл размер для скачивания)
-  const OUT_W = 1080;   // итоговая ширина PNG
-  const OUT_H = 1920;   // итоговая высота PNG
-  // Логический canvas (превью) — совпадает с исходником в разметке
-  const previewCanvas = document.getElementById('cardCanvas');
-  const previewW = previewCanvas.width;   // 540
-  const previewH = previewCanvas.height;  // 960
+  <div class="editor">
+    <h3>Редактировать карточку</h3>
+    <input type="text" id="logoInput" placeholder="Логотип" />
+    <input type="text" id="dateInput" placeholder="Дата" />
+    <input type="text" id="titleInput" placeholder="Заголовок" />
+    <input type="text" id="subtitleInput" placeholder="Подзаголовок" />
+    <textarea id="contentInput" placeholder="Текст (абзацы через пустую строку)"></textarea>
+    <button onclick="applyChanges()">Применить</button>
+  </div>
 
-  // Функция рисования на произвольном контексте/размере
-  function draw(ctx, W, H){
-    // --- фон: линейный + несколько радиальных "белых кружков" ---
-    // базовый градиент
-    const base = ctx.createLinearGradient(0,0,0,H);
-    base.addColorStop(0, '#0b0c10');
-    base.addColorStop(1, '#07080b');
-    ctx.fillStyle = base;
-    ctx.fillRect(0,0,W,H);
+  <button id="downloadBtn">Скачать для TikTok</button>
 
-    // helper для белых кругов (радиальных градиентов)
-    function addCircle(cx, cy, r, innerAlpha){
-      const g = ctx.createRadialGradient(cx, cy, r*0.1, cx, cy, r);
-      g.addColorStop(0, `rgba(255,255,255,${innerAlpha})`);
-      g.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.globalCompositeOperation = 'screen';
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI*2);
-      ctx.fill();
-      ctx.globalCompositeOperation = 'source-over';
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+    function applyChanges() {
+      document.getElementById('logoView').textContent = document.getElementById('logoInput').value || 'фултьма';
+      document.getElementById('dateView').textContent = document.getElementById('dateInput').value || 'Сегодня';
+      document.getElementById('titleView').textContent = document.getElementById('titleInput').value || 'Заголовок';
+      document.getElementById('subtitleView').textContent = document.getElementById('subtitleInput').value || '';
+      const raw = document.getElementById('contentInput').value.trim();
+      const paragraphs = raw.split(/\n{2,}/).map(p => `<p>${p}</p>`).join('');
+      document.getElementById('contentView').innerHTML = paragraphs || '<p>Текст отсутствует.</p>';
     }
 
-    // масштабируем радиусы в зависимости от размера
-    const short = Math.min(W,H);
-    addCircle(W*0.5, H*0.05, short*0.37, 0.14); // верхняя большая
-    addCircle(W*0.2, H*0.28, short*0.28, 0.12);
-    addCircle(W*0.8, H*0.2, short*0.22, 0.10);
-    addCircle(W*0.5, H*0.62, short*0.40, 0.14);
-    // дополнительный слабый свет
-    addCircle(W*0.75, H*0.75, short*0.18, 0.09);
+    document.getElementById('downloadBtn').addEventListener('click', async () => {
+      const card = document.querySelector('.card');
 
-    // --- карточка с очень закруглёнными углами ---
-    const cardW = Math.round(W * 0.5 * 1.0 + 0); // на превью размер будет помещён автоматически
-    const cardH = Math.round(H * 0.5 * 1.0 + 0);
-    // позиция (центр)
-    const cx = W/2;
-    const cy = H/2;
-    const x = cx - cardW/2;
-    const y = cy - cardH/2;
+      // Новый нормальный контейнер
+      const container = document.createElement('div');
+      container.style.width = card.offsetWidth + 'px';
+      container.style.height = card.offsetHeight + 'px';
+      container.style.position = 'fixed';
+      container.style.top = '0';
+      container.style.left = '0';
+      container.style.opacity = '0';
 
-    // draw shadow by drawing a rounded rect on a separate temporary canvas with blur effect
-    // simpler: use ctx.shadow* on fill
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.shadowBlur = Math.round(Math.max(W,H) * 0.03);
-    ctx.shadowOffsetY = Math.round(Math.max(W,H) * 0.01);
+      // копируем фон страницы
+      container.style.background = getComputedStyle(document.body).background;
 
-    // card background (semi-transparent + blur effect imitation)
-    const cardRadius = Math.min(cardW, cardH) * 0.06; // strong rounding
-    // rounded rect path
-    roundRectPath(ctx, x, y, cardW, cardH, cardRadius);
-    ctx.fillStyle = 'rgba(12,13,18,0.88)';
-    ctx.fill();
-    ctx.restore();
+      document.body.appendChild(container);
 
-    // inner stroke / glass edge
-    ctx.save();
-    roundRectPath(ctx, x+1, y+1, cardW-2, cardH-2, cardRadius);
-    ctx.lineWidth = Math.max(1, Math.round(W*0.0025));
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-    ctx.stroke();
-    ctx.restore();
+      const clone = card.cloneNode(true);
+      clone.style.margin = '0';
+      container.appendChild(clone);
 
-    // subtle inner highlight (top)
-    ctx.save();
-    roundRectPath(ctx, x+1, y+1, cardW-2, cardH/2, cardRadius, true);
-    ctx.fillStyle = 'rgba(255,255,255,0.015)';
-    ctx.fill();
-    ctx.restore();
-
-    // clip to card and draw some placeholder content (можешь убрать)
-    ctx.save();
-    roundRectPath(ctx, x, y, cardW, cardH, cardRadius);
-    ctx.clip();
-
-    // Пример контента внутри карточки: логотип, дата, заголовок, абзацы
-    const padding = Math.round(cardW * 0.09);
-    const innerX = x + padding;
-    let curY = y + padding;
-
-    // логотип (text)
-    ctx.fillStyle = '#fff';
-    ctx.font = `${Math.round(cardW*0.08)}px Rubik Iso, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText('фултьма', cx, curY + Math.round(cardW*0.04));
-    curY += Math.round(cardW*0.08) + padding*0.4;
-
-    // дата
-    ctx.fillStyle = 'rgba(169,176,190,0.9)';
-    ctx.font = `${Math.round(cardW*0.035)}px Inter, Roboto, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText('15 ноября 2025', cx, curY + Math.round(cardW*0.02));
-    curY += Math.round(cardW*0.05) + padding*0.2;
-
-    // заголовок
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
-    ctx.font = `700 ${Math.round(cardW*0.12)}px Inter, Roboto, sans-serif`;
-    ctx.fillText('Идейные выводы', cx, curY + Math.round(cardW*0.06));
-    curY += Math.round(cardW*0.12) + padding*0.2;
-
-    // подзаголовок
-    ctx.fillStyle = 'rgba(169,176,190,0.9)';
-    ctx.font = `${Math.round(cardW*0.055)}px Inter, Roboto, sans-serif`;
-    ctx.fillText('Банальные, но непровержимые', cx, curY + Math.round(cardW*0.03));
-    curY += Math.round(cardW*0.06) + padding*0.4;
-
-    // тело: два параграфа в несколько строк
-    ctx.fillStyle = 'rgba(245,247,250,0.95)';
-    ctx.font = `${Math.round(cardW*0.06)}px Roboto, Inter, sans-serif`;
-    ctx.textAlign = 'left';
-    const bodyW = cardW - padding*2;
-    const px = innerX;
-    let textY = y + cardH*0.48;
-
-    const paragraph1 = 'Банальные, но неопровержимые выводы, а также явные признаки подмены институциональности и по сей день остаются уделом либералов.';
-    const paragraph2 = 'Идейные сообщения высшего порядка, а также граница обучения кадров прекрасно подходят для реализации своевременного выполнения сверхзадач.';
-
-    textY = drawWrappedText(ctx, paragraph1, px, textY, bodyW, Math.round(cardW*0.055), 1.45);
-    textY += Math.round(cardW*0.03); // gap
-    textY = drawWrappedText(ctx, paragraph2, px, textY, bodyW, Math.round(cardW*0.055), 1.45);
-
-    ctx.restore(); // снимаем clip
-  }
-
-  // === вспомогательные функции ===
-  function roundRectPath(ctx, x, y, w, h, r, topOnly=false){
-    // r — радиус
-    if (topOnly) {
-      // path for top half rounded (used для highlight)
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + w, y, x + w, y + h, r);
-      ctx.lineTo(x + w, y + h);
-      ctx.lineTo(x, y + h);
-      ctx.arcTo(x, y, x + r, y, r);
-      ctx.closePath();
-      return;
-    }
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-
-  function drawWrappedText(ctx, text, x, y, maxWidth, fontSize, lineHeightFactor){
-    // нарезаем на слова и рендерим построчно
-    ctx.font = `${fontSize}px Roboto, Inter, sans-serif`;
-    const words = text.split(' ');
-    let line = '';
-    const lh = fontSize * lineHeightFactor;
-    for (let n = 0; n < words.length; n++) {
-      const testLine = line + (line ? ' ' : '') + words[n];
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && n > 0) {
-        ctx.fillText(line, x, y);
-        line = words[n];
-        y += lh;
-      } else {
-        line = testLine;
-      }
-    }
-    if (line) {
-      ctx.fillText(line, x, y);
-      y += lh;
-    }
-    return y;
-  }
-
-  // --- отрисовка превью (маленький canvas) ---
-  // ждём, пока шрифты загрузятся
-  await document.fonts.ready;
-
-  // Preview canvas — использован для отображения в элементе <canvas id="cardCanvas">
-  const previewCtx = previewCanvas.getContext('2d');
-  draw(previewCtx, previewCanvas.width, previewCanvas.height);
-
-  // функция, делающая финал (большой canvas) и отдающая dataURL
-  function makeExportDataURL() {
-    // создаём оффскрин canvas нужного размера
-    const canvas = document.createElement('canvas');
-    canvas.width = OUT_W;
-    canvas.height = OUT_H;
-    const ctx = canvas.getContext('2d');
-
-    // рисуем фон белых кружков и карточки на большем canvas
-    draw(ctx, canvas.width, canvas.height);
-
-    // возвращаем PNG data URL
-    return canvas.toDataURL('image/png');
-  }
-
-  // кнопки
-  const downloadBtn = document.getElementById('downloadBtn');
-  const openBtn = document.getElementById('openBtn');
-
-  downloadBtn.addEventListener('click', () => {
-    try {
-      const dataURL = makeExportDataURL();
-      const a = document.createElement('a');
-      a.href = dataURL;
-      a.download = 'fulthma_card.png';
-      // iOS иногда игнорирует programmatic click for download — но обычно работает в десктоп/андроид.
-      a.click();
-      // fallback: открываем в новой вкладке, если автоматический DL не сработал
-      setTimeout(()=> window.open(dataURL, '_blank'), 200);
-    } catch (err) {
-      console.error(err);
-      alert('Ошибка при генерации изображения — см. консоль.');
-    }
-  });
-
-  openBtn.addEventListener('click', () => {
-    const dataURL = makeExportDataURL();
-    // откроется в новой вкладке — на iPhone long-press по картинке даст "Сохранить"
-    window.open(dataURL, '_blank');
-  });
-
-})(); // IIFE
-</script>
+      html2canvas(container, { scale: 2 }).then(canvas => {
+        canvas.toBlob(blob => {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'fulthma_card.jpg';
+          link.click();
+          URL.revokeObjectURL(link.href);
+          document.body.removeChild(container);
+        }, 'image/jpeg', 0.95);
+      });
+    });
+  </script>
 </body>
 </html>
