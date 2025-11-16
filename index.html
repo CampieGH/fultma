@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
+    /* Ваши существующие стили остаются без изменений */
     html, body {
       margin: 0;
       padding: 0;
@@ -169,9 +170,24 @@
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
+    // Функция для обновления даты
+    function updateDate() {
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = String(now.getFullYear()).slice(-2);
+        return `${day}.${month}.${year}`;
+    }
+
+    // Устанавливаем сегодняшнюю дату при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('dateView').textContent = updateDate();
+        document.getElementById('dateInput').value = updateDate();
+    });
+
     function applyChanges() {
       document.getElementById('logoView').textContent = document.getElementById('logoInput').value || 'фултьма';
-      document.getElementById('dateView').textContent = document.getElementById('dateInput').value || 'Сегодня';
+      document.getElementById('dateView').textContent = document.getElementById('dateInput').value || updateDate();
       document.getElementById('titleView').textContent = document.getElementById('titleInput').value || 'Заголовок';
       document.getElementById('subtitleView').textContent = document.getElementById('subtitleInput').value || '';
       const raw = document.getElementById('contentInput').value.trim();
