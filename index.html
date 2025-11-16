@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <title>Карточка — фултьма</title>
+
+  <!-- Подключил Inter и Roboto -->
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Iso&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+
   <style>
     html, body {
       margin: 0;
@@ -146,7 +150,7 @@
       <h1 class="title" id="titleView">Идейные выводы</h1>
       <p class="subtitle" id="subtitleView">Банальные, но непровержимые</p>
       <div class="content" id="contentView">
-        <p>Банальные, но непроверимые выводы, а также явные признаки подмены институциональности и по сей день остаются уделом либералов, которые жаждут быть ассоциативно распределены по отраслям.</p>
+        <p>Банальные, но неопровержимые выводы, а также явные признаки подмены институциональности и по сей день остаются уделом либералов, которые жаждут быть ассоциативно распределены по отраслям.</p>
         <p>Идейные сообщения высшего порядка, а также граница обучения кадров прекрасно подходят для реализации своевременного выполнения сверхзадач.</p>
       </div>
     </div>
@@ -179,28 +183,31 @@
     document.getElementById('downloadBtn').addEventListener('click', async () => {
       const card = document.querySelector('.card');
 
-      // создаём временный контейнер с border-radius
+      // Новый нормальный контейнер
       const container = document.createElement('div');
       container.style.width = card.offsetWidth + 'px';
       container.style.height = card.offsetHeight + 'px';
-      container.style.borderRadius = '24px';
-      container.style.overflow = 'hidden';
-      container.style.position = 'absolute';
-      container.style.top = '-9999px';
-      container.style.left = '-9999px';
-      container.style.background = 'transparent';
+      container.style.position = 'fixed';
+      container.style.top = '0';
+      container.style.left = '0';
+      container.style.opacity = '0';
+
+      // копируем фон страницы
+      container.style.background = getComputedStyle(document.body).background;
+
       document.body.appendChild(container);
 
       const clone = card.cloneNode(true);
       clone.style.margin = '0';
       container.appendChild(clone);
 
-      html2canvas(container, { scale: 2, backgroundColor: null }).then(canvas => {
+      html2canvas(container, { scale: 2 }).then(canvas => {
         canvas.toBlob(blob => {
           const link = document.createElement('a');
           link.href = URL.createObjectURL(blob);
           link.download = 'fulthma_card.jpg';
           link.click();
+          URL.revokeObjectURL(link.href);
           document.body.removeChild(container);
         }, 'image/jpeg', 0.95);
       });
