@@ -80,16 +80,9 @@
       max-height: 280px;
       object-fit: cover;
       border-radius: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 28px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
       border: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .image-title {
-      font-size: 24px;
-      font-weight: 600;
-      margin-bottom: 28px;
-      color: #ffffff;
     }
 
     .content {
@@ -100,21 +93,6 @@
 
     .content p {
       margin-bottom: 24px;
-    }
-
-    /* Стили для сортировки */
-    .sortable-item {
-      cursor: move;
-      margin-bottom: 20px;
-      padding: 16px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.03);
-      border: 1px dashed rgba(255,255,255,0.1);
-    }
-
-    .sortable-item.dragging {
-      opacity: 0.5;
-      background: rgba(255,255,255,0.08);
     }
 
     .editor {
@@ -176,12 +154,11 @@
     }
 
     /* Стили для загрузки изображения */
-    .image-controls {
+    .image-upload {
       display: flex;
       align-items: center;
       gap: 12px;
       margin-bottom: 16px;
-      flex-wrap: wrap;
     }
 
     .image-upload-btn {
@@ -211,44 +188,6 @@
     .remove-image:hover {
       background: rgba(255, 0, 0, 0.3);
     }
-
-    .image-section {
-      margin-bottom: 24px;
-    }
-
-    .section-controls {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-
-    .image-preview {
-      position: relative;
-      margin-bottom: 10px;
-    }
-
-    .image-preview img {
-      width: 100%;
-      max-height: 120px;
-      object-fit: cover;
-      border-radius: 8px;
-    }
-
-    .drag-handle {
-      cursor: move;
-      padding: 8px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 6px;
-      margin-bottom: 10px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .drag-handle::before {
-      content: "☰";
-      font-size: 16px;
-    }
   </style>
 </head>
 <body>
@@ -256,16 +195,11 @@
     <div class="card-inner">
       <div class="logo" id="logoView">фултьма</div>
       <div class="date" id="dateView">дата</div>
+      <h1 class="title" id="titleView">-</h1>
+      <p class="subtitle" id="subtitleView">ТГК: ФУЛТЬМА</p>
       
-      <!-- Контейнер для сортируемых элементов -->
-      <div id="sortableContainer">
-        <div class="sortable-item" data-type="main-title">
-          <h1 class="title" id="titleView">-</h1>
-          <p class="subtitle" id="subtitleView">ТГК: ФУЛТЬМА</p>
-        </div>
-        
-        <!-- Контейнер для изображений будет добавляться сюда -->
-      </div>
+      <!-- Контейнер для изображения -->
+      <div id="imageContainer"></div>
       
       <div class="content" id="contentView">
         <p>-</p>
@@ -276,31 +210,25 @@
   <div class="editor">
     <h3>Редактировать карточку</h3>
     
-    <!-- Основные поля -->
+    <!-- Поле для загрузки изображения -->
+    <div class="image-upload">
+      <input type="file" id="imageInput" accept="image/*" style="display: none;">
+      <button class="image-upload-btn" onclick="document.getElementById('imageInput').click()">Загрузить изображение</button>
+      <button class="remove-image" onclick="removeImage()">Удалить</button>
+    </div>
+    
     <input type="text" id="logoInput" placeholder="Логотип" />
     <input type="text" id="dateInput" placeholder="Дата" />
     <input type="text" id="titleInput" placeholder="Заголовок" />
     <input type="text" id="subtitleInput" placeholder="Подзаголовок" />
-    
-    <!-- Управление изображениями -->
-    <div class="section-controls">
-      <button class="image-upload-btn" onclick="addImageSection()">+ Добавить изображение с заголовком</button>
-    </div>
-    
-    <!-- Секции изображений -->
-    <div id="imageSections"></div>
-    
     <textarea id="contentInput" placeholder="Текст (абзацы через пустую строку)"></textarea>
-    <button onclick="applyChanges()">Применить изменения</button>
+    <button onclick="applyChanges()">Применить</button>
   </div>
 
   <button id="downloadBtn">Скачать для TikTok</button>
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
-    let imageSections = [];
-    let dragSrcElement = null;
-
     // Функция для обновления даты
     function updateDate() {
         const now = new Date();
@@ -314,224 +242,80 @@
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('dateView').textContent = updateDate();
         document.getElementById('dateInput').value = updateDate();
-        initSortable();
+        
+        // Обработчик загрузки изображения
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    addImageToCard(event.target.result);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
     });
 
-    // Добавление новой секции с изображением
-    function addImageSection(imageSrc = '', title = '') {
-        const sectionId = 'image_' + Date.now();
-        imageSections.push({
-            id: sectionId,
-            image: imageSrc,
-            title: title
-        });
+    // Функция добавления изображения в карточку
+    function addImageToCard(imageSrc) {
+        const imageContainer = document.getElementById('imageContainer');
+        imageContainer.innerHTML = '';
         
-        renderImageSections();
+        const img = document.createElement('img');
+        img.src = imageSrc;
+        img.className = 'card-image';
+        img.alt = 'Изображение карточки';
+        
+        imageContainer.appendChild(img);
     }
 
-    // Удаление секции изображения
-    function removeImageSection(sectionId) {
-        imageSections = imageSections.filter(section => section.id !== sectionId);
-        renderImageSections();
-        updateCard();
-    }
-
-    // Отрисовка секций изображений в редакторе
-    function renderImageSections() {
-        const container = document.getElementById('imageSections');
-        container.innerHTML = '';
-        
-        imageSections.forEach((section, index) => {
-            const sectionDiv = document.createElement('div');
-            sectionDiv.className = 'image-section';
-            sectionDiv.innerHTML = `
-                <div class="drag-handle">Перетащите для изменения порядка</div>
-                <div class="image-controls">
-                    <input type="file" class="section-image-input" data-id="${section.id}" accept="image/*" style="display: none;">
-                    <button class="image-upload-btn" onclick="document.querySelector('[data-id=\\'${section.id}\\']').click()">Выбрать изображение</button>
-                    <input type="text" class="section-title-input" data-id="${section.id}" placeholder="Заголовок для изображения" value="${section.title}">
-                    <button class="remove-image" onclick="removeImageSection('${section.id}')">Удалить</button>
-                </div>
-                ${section.image ? `
-                <div class="image-preview">
-                    <img src="${section.image}" alt="Предпросмотр">
-                </div>
-                ` : ''}
-            `;
-            container.appendChild(sectionDiv);
-            
-            // Обработчик загрузки изображения
-            const fileInput = sectionDiv.querySelector('.section-image-input');
-            fileInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        const sectionId = this.resultSectionId;
-                        const section = imageSections.find(s => s.id === sectionId);
-                        if (section) {
-                            section.image = event.target.result;
-                            renderImageSections();
-                            updateCard();
-                        }
-                    }
-                    reader.resultSectionId = section.id;
-                    reader.readAsDataURL(file);
-                }
-            });
-            
-            // Обработчик изменения заголовка
-            const titleInput = sectionDiv.querySelector('.section-title-input');
-            titleInput.addEventListener('input', function() {
-                const sectionId = this.getAttribute('data-id');
-                const section = imageSections.find(s => s.id === sectionId);
-                if (section) {
-                    section.title = this.value;
-                    updateCard();
-                }
-            });
-        });
-    }
-
-    // Инициализация сортировки
-    function initSortable() {
-        const container = document.getElementById('sortableContainer');
-        
-        container.addEventListener('dragstart', function(e) {
-            if (e.target.classList.contains('sortable-item') || e.target.closest('.sortable-item')) {
-                dragSrcElement = e.target.classList.contains('sortable-item') ? e.target : e.target.closest('.sortable-item');
-                dragSrcElement.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-            }
-        });
-        
-        container.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            return false;
-        });
-        
-        container.addEventListener('dragenter', function(e) {
-            e.preventDefault();
-        });
-        
-        container.addEventListener('drop', function(e) {
-            e.preventDefault();
-            if (dragSrcElement) {
-                dragSrcElement.classList.remove('dragging');
-                
-                const rect = container.getBoundingClientRect();
-                const y = e.clientY - rect.top;
-                
-                // Находим элемент над которым произошёл дроп
-                const elements = Array.from(container.children);
-                let insertBeforeElement = null;
-                
-                for (let element of elements) {
-                    const rect = element.getBoundingClientRect();
-                    const elementY = rect.top - container.getBoundingClientRect().top + rect.height / 2;
-                    
-                    if (y < elementY) {
-                        insertBeforeElement = element;
-                        break;
-                    }
-                }
-                
-                if (insertBeforeElement) {
-                    container.insertBefore(dragSrcElement, insertBeforeElement);
-                } else {
-                    container.appendChild(dragSrcElement);
-                }
-                
-                dragSrcElement = null;
-            }
-            return false;
-        });
-        
-        container.addEventListener('dragend', function(e) {
-            if (dragSrcElement) {
-                dragSrcElement.classList.remove('dragging');
-                dragSrcElement = null;
-            }
-        });
-    }
-
-    // Обновление карточки
-    function updateCard() {
-        const sortableContainer = document.getElementById('sortableContainer');
-        const imageContainer = sortableContainer.querySelector('#dynamicImages') || document.createElement('div');
-        imageContainer.id = 'dynamicImages';
-        
-        // Очищаем только динамические изображения
-        const existingDynamic = sortableContainer.querySelector('#dynamicImages');
-        if (existingDynamic) {
-            existingDynamic.remove();
-        }
-        
-        // Добавляем изображения в сортируемый контейнер
-        if (imageSections.length > 0) {
-            imageSections.forEach(section => {
-                const imageDiv = document.createElement('div');
-                imageDiv.className = 'sortable-item';
-                imageDiv.setAttribute('draggable', 'true');
-                imageDiv.innerHTML = `
-                    ${section.image ? `<img src="${section.image}" class="card-image" alt="Изображение">` : ''}
-                    ${section.title ? `<div class="image-title">${section.title}</div>` : ''}
-                `;
-                imageContainer.appendChild(imageDiv);
-            });
-            
-            // Вставляем контейнер с изображениями в сортируемый контейнер
-            const mainTitle = sortableContainer.querySelector('[data-type="main-title"]');
-            if (mainTitle.nextSibling) {
-                sortableContainer.insertBefore(imageContainer, mainTitle.nextSibling);
-            } else {
-                sortableContainer.appendChild(imageContainer);
-            }
-        }
+    // Функция удаления изображения
+    function removeImage() {
+        document.getElementById('imageContainer').innerHTML = '';
+        document.getElementById('imageInput').value = '';
     }
 
     function applyChanges() {
-        document.getElementById('logoView').textContent = document.getElementById('logoInput').value || 'фултьма';
-        document.getElementById('dateView').textContent = document.getElementById('dateInput').value || updateDate();
-        document.getElementById('titleView').textContent = document.getElementById('titleInput').value || 'Заголовок';
-        document.getElementById('subtitleView').textContent = document.getElementById('subtitleInput').value || '';
-        
-        const raw = document.getElementById('contentInput').value.trim();
-        const paragraphs = raw.split(/\n{2,}/).map(p => `<p>${p}</p>`).join('');
-        document.getElementById('contentView').innerHTML = paragraphs || '<p>Текст отсутствует.</p>';
-        
-        updateCard();
+      document.getElementById('logoView').textContent = document.getElementById('logoInput').value || 'фултьма';
+      document.getElementById('dateView').textContent = document.getElementById('dateInput').value || updateDate();
+      document.getElementById('titleView').textContent = document.getElementById('titleInput').value || 'Заголовок';
+      document.getElementById('subtitleView').textContent = document.getElementById('subtitleInput').value || '';
+      const raw = document.getElementById('contentInput').value.trim();
+      const paragraphs = raw.split(/\n{2,}/).map(p => `<p>${p}</p>`).join('');
+      document.getElementById('contentView').innerHTML = paragraphs || '<p>Текст отсутствует.</p>';
     }
 
     document.getElementById('downloadBtn').addEventListener('click', async () => {
-        const card = document.querySelector('.card');
+      const card = document.querySelector('.card');
 
-        const container = document.createElement('div');
-        container.style.width = card.offsetWidth + 'px';
-        container.style.height = card.offsetHeight + 'px';
-        container.style.position = 'fixed';
-        container.style.top = '0';
-        container.style.left = '0';
-        container.style.opacity = '0';
+      // Новый нормальный контейнер
+      const container = document.createElement('div');
+      container.style.width = card.offsetWidth + 'px';
+      container.style.height = card.offsetHeight + 'px';
+      container.style.position = 'fixed';
+      container.style.top = '0';
+      container.style.left = '0';
+      container.style.opacity = '0';
 
-        container.style.background = getComputedStyle(document.body).background;
+      // копируем фон страницы
+      container.style.background = getComputedStyle(document.body).background;
 
-        document.body.appendChild(container);
+      document.body.appendChild(container);
 
-        const clone = card.cloneNode(true);
-        clone.style.margin = '0';
-        container.appendChild(clone);
+      const clone = card.cloneNode(true);
+      clone.style.margin = '0';
+      container.appendChild(clone);
 
-        html2canvas(container, { scale: 2 }).then(canvas => {
-            canvas.toBlob(blob => {
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'fulthma_card.jpg';
-                link.click();
-                URL.revokeObjectURL(link.href);
-                document.body.removeChild(container);
-            }, 'image/jpeg', 0.95);
-        });
+      html2canvas(container, { scale: 2 }).then(canvas => {
+        canvas.toBlob(blob => {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'fulthma_card.jpg';
+          link.click();
+          URL.revokeObjectURL(link.href);
+          document.body.removeChild(container);
+        }, 'image/jpeg', 0.95);
+      });
     });
   </script>
 </body>
