@@ -74,6 +74,17 @@
       margin-bottom: 24px;
     }
 
+    /* Стили для изображения */
+    .card-image {
+      width: 100%;
+      max-height: 280px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-bottom: 28px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
     .content {
       font-size: 24px;
       line-height: 1.5;
@@ -141,6 +152,42 @@
       cursor: pointer;
       display: block;
     }
+
+    /* Стили для загрузки изображения */
+    .image-upload {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .image-upload-btn {
+      padding: 8px 16px;
+      background: #ffffff1a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .image-upload-btn:hover {
+      background: #ffffff2d;
+    }
+
+    .remove-image {
+      padding: 8px 16px;
+      background: rgba(255, 0, 0, 0.2);
+      color: #ff6b6b;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .remove-image:hover {
+      background: rgba(255, 0, 0, 0.3);
+    }
   </style>
 </head>
 <body>
@@ -150,6 +197,10 @@
       <div class="date" id="dateView">дата</div>
       <h1 class="title" id="titleView">-</h1>
       <p class="subtitle" id="subtitleView">ТГК: ФУЛТЬМА</p>
+      
+      <!-- Контейнер для изображения -->
+      <div id="imageContainer"></div>
+      
       <div class="content" id="contentView">
         <p>-</p>
       </div>
@@ -158,6 +209,14 @@
 
   <div class="editor">
     <h3>Редактировать карточку</h3>
+    
+    <!-- Поле для загрузки изображения -->
+    <div class="image-upload">
+      <input type="file" id="imageInput" accept="image/*" style="display: none;">
+      <button class="image-upload-btn" onclick="document.getElementById('imageInput').click()">Загрузить изображение</button>
+      <button class="remove-image" onclick="removeImage()">Удалить</button>
+    </div>
+    
     <input type="text" id="logoInput" placeholder="Логотип" />
     <input type="text" id="dateInput" placeholder="Дата" />
     <input type="text" id="titleInput" placeholder="Заголовок" />
@@ -183,7 +242,38 @@
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('dateView').textContent = updateDate();
         document.getElementById('dateInput').value = updateDate();
+        
+        // Обработчик загрузки изображения
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    addImageToCard(event.target.result);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
     });
+
+    // Функция добавления изображения в карточку
+    function addImageToCard(imageSrc) {
+        const imageContainer = document.getElementById('imageContainer');
+        imageContainer.innerHTML = '';
+        
+        const img = document.createElement('img');
+        img.src = imageSrc;
+        img.className = 'card-image';
+        img.alt = 'Изображение карточки';
+        
+        imageContainer.appendChild(img);
+    }
+
+    // Функция удаления изображения
+    function removeImage() {
+        document.getElementById('imageContainer').innerHTML = '';
+        document.getElementById('imageInput').value = '';
+    }
 
     function applyChanges() {
       document.getElementById('logoView').textContent = document.getElementById('logoInput').value || 'фултьма';
