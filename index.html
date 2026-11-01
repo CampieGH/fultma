@@ -16,12 +16,13 @@
   button.ghost { background:#262b36; color:var(--text); font-size:16px; padding:12px; }
   button:disabled { opacity:.4; cursor:default; }
   #msg { margin-top:10px; color:var(--warm); min-height:1.5em; }
-  ul { padding-left:20px; color:var(--muted); margin:6px 0; }
-  li { margin:4px 0; }
+  ol { padding-left:20px; color:var(--muted); margin:6px 0; }
+  li { margin:5px 0; }
   li b { color:var(--text); }
-  canvas#map { width:100%; max-width:420px; aspect-ratio:1; image-rendering:pixelated; border-radius:10px; border:1px solid var(--line); display:block; margin:10px auto; background:#0b0d11; }
+  canvas#plan { width:100%; aspect-ratio:1; border-radius:10px; border:1px solid var(--line); display:block; margin:10px 0; background:#0b0d11; }
   .stats { display:flex; gap:18px; flex-wrap:wrap; color:var(--muted); font-size:14px; }
   .stats b { color:var(--text); }
+  .row { display:flex; gap:10px; }
   #xrcanvas { display:none; }
 </style>
 <script type="importmap">
@@ -31,7 +32,7 @@
 <body>
 <div class="wrap">
   <h1>Бог стола</h1>
-  <p>Маленький блочный мир на твоём реальном столе. Жители живут сами — ты меняешь землю и творишь чудеса.</p>
+  <p>Крошечный народ живёт прямо на твоей мебели. Сначала размечаешь поверхности, потом на них появляется мир.</p>
 
   <div class="card">
     <button id="enter" disabled>Проверяю поддержку MR…</button>
@@ -40,147 +41,83 @@
 
   <div class="card">
     <b>Как играть</b>
-    <ul>
-      <li><b>Старт:</b> положи контроллер (или кончики пальцев) в центр стола и нажми курок/щипок — там появится мир. Он запомнится и в следующий раз будет на месте.</li>
-      <li>Меню — над <b>левой</b> рукой. Действуешь <b>правой</b>: луч + курок.</li>
-      <li><b>Строить / Копать</b> — блоки как в Майнкрафте. Материал переключается кнопкой.</li>
-      <li><b>Взять</b> — подхвати жителя и перенеси. Не роняй с высоты 🙂</li>
-      <li><b>Дождь</b> (держи курок) — растит деревья, жители молятся, растёт вера. <b>Молния</b> — разрушает, но пугает и может убить.</li>
-      <li>Жители сами рубят деревья, копят дерево и строят дома. Больше домов — больше жителей. Вера даёт ману на чудеса.</li>
-    </ul>
+    <ol>
+      <li><b>Разметка.</b> Меню — над левой рукой. «+ Поверхность»: коснись <b>белым шариком</b> на правом контроллере (или щипком пальцев) угла стола → второго угла той же стороны → любой точки у противоположного края. Так размечай столы, полки, подоконник, даже участок пола.</li>
+      <li><b>«✓ Создать мир».</b> На поверхностях вырастут деревья, на самой большой появятся 5 жителей.</li>
+      <li><b>Ты — бог:</b> ставишь и копаешь блоки, переносишь жителей на другую мебель, вызываешь дождь (растит лес, жители молятся) и молнию (разрушает и пугает).</li>
+      <li><b>Жители</b> сами ходят по столу, рубят деревья, строят домики и размножаются. Лес кончится — без твоего дождя им нечем строиться.</li>
+      <li>Не роняй жителей с высоты и за край мебели 🙂</li>
+    </ol>
   </div>
 
   <div class="card">
     <b>Твой мир</b>
-    <div class="stats"><span>Жители: <b id="sPop">—</b></span><span>Дома: <b id="sHouses">—</b></span><span>Дерево: <b id="sWood">—</b></span><span>Вера: <b id="sFaith">—</b></span></div>
-    <canvas id="map" width="16" height="16"></canvas>
-    <button class="ghost" id="reset">Создать новый мир</button>
+    <div class="stats"><span>Поверхностей: <b id="sSurf">0</b></span><span>Жители: <b id="sPop">—</b></span><span>Дома: <b id="sHouses">—</b></span><span>Вера: <b id="sFaith">—</b></span></div>
+    <canvas id="plan" width="700" height="700"></canvas>
+    <div class="row"><button class="ghost" id="resetWorld">Новый мир (разметка останется)</button><button class="ghost" id="resetAll">Стереть всё</button></div>
   </div>
 </div>
 
 <script type="module">
 import * as THREE from 'three';
 
-// =============== Константы мира ===============
-const W = 16, D = 16, H = 14, S = 0.035;           // размер мира в блоках, размер блока (м)
-const AIR = 0, GRASS = 1, DIRT = 2, STONE = 3, LOG = 4, LEAF = 5, PLANK = 6, SAND = 7, ROOF = 8;
+// =============== Константы ===============
+const S = 0.02, CH = 16;                       // блок 2 см, высота мира 16 блоков
+const AIR = 0, GRASS = 1, DIRT = 2, STONE = 3, LOG = 4, LEAF = 5, PLANK = 6, SAND = 7, ROOF = 8, TABLE = 9;
+const GROUNDS = new Set([TABLE, GRASS, DIRT, STONE, SAND]);
 const COLORS = { 1: 0x5fae3c, 2: 0x8b5a2b, 3: 0x8a8f98, 4: 0x6b4423, 5: 0x3f8f2f, 6: 0xc8a26a, 7: 0xe3d39a, 8: 0xb8432f };
-const MATERIALS = [[GRASS, 'Трава'], [DIRT, 'Земля'], [STONE, 'Камень'], [SAND, 'Песок']];
-const HUT_COST = 8, MANA_MAX = 100, COST_BLOCK = 1, COST_BOLT = 15;
-const SKEY = 'godtable_save_v1', AKEY = 'godtable_anchor_v1';
-
+const MATERIALS = [[GRASS, 'Трава'], [DIRT, 'Земля'], [STONE, 'Камень'], [SAND, 'Песок'], [PLANK, 'Доски']];
+const HUT_COST = 8, MANA_MAX = 100, COST_BLOCK = 1, COST_BOLT = 15, FALL_DEATH = 0.3;
+const SKEY = 'godtable2_save', AKEY = 'godtable2_anchor';
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
   del(k) { try { localStorage.removeItem(k); } catch {} },
 };
 
-// =============== Данные мира ===============
-let blocks = new Uint8Array(W * H * D);
-const idx = (x, y, z) => x + W * (z + D * y);
-const inB = (x, y, z) => x >= 0 && x < W && z >= 0 && z < D && y >= 0 && y < H;
-const get = (x, y, z) => inB(x, y, z) ? blocks[idx(x, y, z)] : (y < 0 ? STONE : AIR);
-let worldDirty = true;
-function set(x, y, z, t) { if (!inB(x, y, z)) return; blocks[idx(x, y, z)] = t; worldDirty = true; }
-
-const tribe = { mana: 50, faith: 50, wood: 0, houses: [], building: null, popTimer: 0, event: '', eventT: 0 };
+// =============== Состояние ===============
+let phase = 'mark';                 // 'mark' — разметка, 'world' — игра
+let surfaces = [], nextSid = 1;     // {id, a:[x,z], b:[x,z], d, y}
+const chunks = new Map();           // id поверхности → мир на ней
 let villagers = [];
+const tribe = { mana: 50, faith: 50, wood: 0, houses: [], building: null, popTimer: 0, event: '', eventT: 0 };
+let dirty = true, tool = 'add', markPts = [], matIdx = 0, confirmA = false, confirmB = false;
+let roomReady = false, anchorNote = '';
 
-function topY(x, z) { for (let y = H - 1; y >= 0; y--) if (get(x, y, z)) return y + 1; return 0; }
-// уровень, на котором стоит житель: листва над головой не мешает
-function standY(x, z) { for (let y = H - 1; y >= 0; y--) { const b = get(x, y, z); if (b && b !== LEAF) return y + 1; } return 0; }
-function walkable(x, z) {
-  if (x < 0 || z < 0 || x >= W || z >= D) return false;
-  const t = standY(x, z); if (t >= H - 1) return false;
-  if (get(x, t, z) || get(x, t + 1, z)) return false;
-  const b = get(x, t - 1, z); return b === GRASS || b === DIRT || b === STONE || b === SAND;
-}
 function event(text) { tribe.event = text; tribe.eventT = 7; dirty = true; }
 
-function plantTree(x, z) {
-  if (!walkable(x, z) || get(x, topY(x, z) - 1, z) !== GRASS) return false;
-  const b = topY(x, z); if (b + 4 >= H) return false;
-  for (let y = b; y < b + 4; y++) if (get(x, y, z)) return false;
-  if (villagers.some(v => Math.floor(v.x) === x && Math.floor(v.z) === z)) return false;
-  for (let y = b; y < b + 3; y++) set(x, y, z, LOG);
-  for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) for (let dy = 2; dy <= 3; dy++) {
-    if (dy === 3 && (dx || dz)) continue;
-    if (!get(x + dx, b + dy, z + dz)) set(x + dx, b + dy, z + dz, LEAF);
-  }
-  return true;
+// =============== Страница: план ===============
+function drawPlan() {
+  const s = store.get(SKEY, null), cv = document.getElementById('plan'), g = cv.getContext('2d'), q = id => document.getElementById(id);
+  g.clearRect(0, 0, cv.width, cv.height);
+  const surf = s?.surfaces || [];
+  q('sSurf').textContent = surf.length; q('sPop').textContent = s ? (s.villagers || []).length : '—';
+  q('sHouses').textContent = s ? (s.houses || []).length : '—'; q('sFaith').textContent = s ? Math.round(s.faith ?? 50) : '—';
+  if (!surf.length) { g.fillStyle = '#8b93a7'; g.font = '24px system-ui'; g.textAlign = 'center'; g.fillText('Пока ничего не размечено', cv.width / 2, cv.height / 2); return; }
+  const corners = sf => { const len = Math.hypot(sf.b[0] - sf.a[0], sf.b[1] - sf.a[1]), ux = (sf.b[0] - sf.a[0]) / len, uz = (sf.b[1] - sf.a[1]) / len, nx = -uz, nz = ux;
+    return [sf.a, sf.b, [sf.b[0] + nx * sf.d, sf.b[1] + nz * sf.d], [sf.a[0] + nx * sf.d, sf.a[1] + nz * sf.d]]; };
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  surf.forEach(sf => corners(sf).forEach(([x, z]) => { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); }));
+  const pad = 50, sc = Math.min((cv.width - 2 * pad) / Math.max(maxX - minX, 0.3), (cv.height - 2 * pad) / Math.max(maxZ - minZ, 0.3));
+  const ox = (cv.width - (maxX - minX) * sc) / 2, oz = (cv.height - (maxZ - minZ) * sc) / 2, P = ([x, z]) => [ox + (x - minX) * sc, oz + (z - minZ) * sc];
+  [...surf].sort((a, b) => a.y - b.y).forEach(sf => {
+    const c = corners(sf); g.beginPath(); c.forEach((p, i) => { const [x, y] = P(p); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath();
+    const t = Math.min(1, sf.y / 1.5); g.fillStyle = `rgba(${Math.round(80 + 170 * t)},${Math.round(200 - 60 * t)},255,.35)`; g.fill(); g.strokeStyle = '#5ef2ff'; g.lineWidth = 2; g.stroke();
+    const [cx, cy] = P([(c[0][0] + c[2][0]) / 2, (c[0][1] + c[2][1]) / 2]);
+    g.fillStyle = '#fff'; g.font = '600 20px system-ui'; g.textAlign = 'center'; g.fillText(`${Math.round(sf.y * 100)} см`, cx, cy);
+  });
 }
-function removeTree(x, z) {
-  let base = -1; for (let y = 0; y < H; y++) if (get(x, y, z) === LOG && get(x, y - 1, z) !== LOG) { base = y; break; }
-  if (base < 0) return 0;
-  let n = 0; for (let y = base; y < H && get(x, y, z) === LOG; y++) { set(x, y, z, AIR); n++; }
-  for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) for (let y = base + 1; y <= base + 4; y++)
-    if (get(x + dx, y, z + dz) === LEAF) set(x + dx, y, z + dz, AIR);
-  return n;
+drawPlan();
+function armed(btn, label, fn) {
+  let a = false;
+  btn.onclick = () => { if (!a) { a = true; btn.textContent = 'Точно? Нажми ещё раз'; setTimeout(() => { a = false; btn.textContent = label; }, 3000); return; }
+    a = false; btn.textContent = label; fn(); drawPlan(); };
 }
-function treeBases() {
-  const out = [];
-  for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) for (let y = 1; y < H; y++)
-    if (get(x, y, z) === LOG && get(x, y - 1, z) !== LOG) { out.push([x, z]); break; }
-  return out;
-}
-
-function genWorld() {
-  blocks = new Uint8Array(W * H * D);
-  const r1 = Math.random() * 6, r2 = Math.random() * 6, r3 = Math.random() * 6;
-  for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) {
-    let h = 3 + Math.round(1.4 * Math.sin(x * 0.45 + r1) + 1.2 * Math.cos(z * 0.5 + r2) + 0.8 * Math.sin((x + z) * 0.3 + r3));
-    h = Math.max(1, Math.min(7, h));
-    for (let y = 0; y < h; y++) blocks[idx(x, y, z)] = y === h - 1 ? (h <= 2 ? SAND : GRASS) : (y >= h - 3 ? DIRT : STONE);
-  }
-  villagers.forEach(v => v.mesh && villagerGroup.remove(v.mesh)); villagers = [];
-  Object.assign(tribe, { mana: 50, faith: 50, wood: 0, houses: [], building: null, popTimer: 0 });
-  let t = 0; for (let k = 0; k < 60 && t < 8; k++) if (plantTree(2 + Math.floor(Math.random() * (W - 4)), 2 + Math.floor(Math.random() * (D - 4)))) t++;
-  for (let k = 0; k < 200 && villagers.length < 5; k++) {
-    const x = 5 + Math.floor(Math.random() * 6), z = 5 + Math.floor(Math.random() * 6);
-    if (walkable(x, z)) addVillager(x + 0.5, z + 0.5);
-  }
-  worldDirty = true; event('Мир создан. Жители ждут знака.');
-}
-
-// =============== Сохранение ===============
-function toB64(u8) { let s = ''; for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); }
-function fromB64(b) { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
-function saveGame() {
-  store.set(SKEY, { v: 1, blocks: toB64(blocks), villagers: villagers.map(v => ({ x: v.x, z: v.z, y: v.y, shirt: v.shirt })),
-    houses: tribe.houses, mana: tribe.mana, faith: tribe.faith, wood: tribe.wood });
-}
-function loadGame() {
-  const s = store.get(SKEY, null); if (!s || s.v !== 1) return false;
-  try {
-    const b = fromB64(s.blocks); if (b.length !== W * H * D) return false; blocks = b;
-    villagers.forEach(v => v.mesh && villagerGroup.remove(v.mesh)); villagers = [];
-    s.villagers.forEach(v => addVillager(v.x, v.z, v.shirt, v.y));
-    Object.assign(tribe, { houses: s.houses || [], mana: s.mana ?? 50, faith: s.faith ?? 50, wood: s.wood ?? 0, building: null });
-    worldDirty = true; return true;
-  } catch { return false; }
-}
-
-// =============== Страница: мини-карта ===============
-function drawMap() {
-  const s = store.get(SKEY, null);
-  const cv = document.getElementById('map'), g = cv.getContext('2d');
-  g.clearRect(0, 0, W, D);
-  const q = id => document.getElementById(id);
-  if (!s) { ['sPop', 'sHouses', 'sWood', 'sFaith'].forEach(i => q(i).textContent = '—'); return; }
-  let b; try { b = fromB64(s.blocks); } catch { return; }
-  for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) {
-    for (let y = H - 1; y >= 0; y--) { const t = b[x + W * (z + D * y)]; if (t) { const c = new THREE.Color(COLORS[t]).multiplyScalar(0.55 + y * 0.07); g.fillStyle = '#' + c.getHexString(); g.fillRect(x, z, 1, 1); break; } }
-  }
-  q('sPop').textContent = s.villagers.length; q('sHouses').textContent = (s.houses || []).length;
-  q('sWood').textContent = s.wood; q('sFaith').textContent = Math.round(s.faith);
-}
-drawMap();
-let resetArmed = false;
-document.getElementById('reset').onclick = e => {
-  if (!resetArmed) { resetArmed = true; e.target.textContent = 'Точно? Старый мир исчезнет'; setTimeout(() => { resetArmed = false; e.target.textContent = 'Создать новый мир'; }, 3000); return; }
-  resetArmed = false; e.target.textContent = 'Создать новый мир';
-  genWorld(); saveGame(); drawMap();
-};
+armed(document.getElementById('resetWorld'), 'Новый мир (разметка останется)', () => {
+  const s = store.get(SKEY, null); if (!s) return;
+  Object.assign(s, { phase: 'mark', chunks: [], villagers: [], houses: [], mana: 50, faith: 50, wood: 0 }); store.set(SKEY, s);
+});
+armed(document.getElementById('resetAll'), 'Стереть всё', () => { store.del(SKEY); store.del(AKEY); });
 
 // =============== Звук ===============
 let ac = null;
@@ -201,8 +138,7 @@ function thunder() {
     const len = ac.sampleRate * 0.9, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
     const src = ac.createBufferSource(), f = ac.createBiquadFilter(), gn = ac.createGain();
-    f.type = 'lowpass'; f.frequency.value = 700; gn.gain.value = 0.5; src.buffer = buf;
-    src.connect(f).connect(gn).connect(ac.destination); src.start();
+    f.type = 'lowpass'; f.frequency.value = 700; gn.gain.value = 0.5; src.buffer = buf; src.connect(f).connect(gn).connect(ac.destination); src.start();
   } catch {}
 }
 
@@ -216,65 +152,209 @@ const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.01, 5
 scene.add(new THREE.HemisphereLight(0xffffff, 0x556070, 1.6));
 const sun = new THREE.DirectionalLight(0xffffff, 1.4); sun.position.set(0.5, 1, 0.3); scene.add(sun);
 
-const worldRoot = new THREE.Group(); worldRoot.matrixAutoUpdate = false; worldRoot.visible = false; scene.add(worldRoot);
-const villagerGroup = new THREE.Group(); worldRoot.add(villagerGroup);
-const fxGroup = new THREE.Group(); worldRoot.add(fxGroup);
+const roomRoot = new THREE.Group(); roomRoot.matrixAutoUpdate = false; roomRoot.visible = false; scene.add(roomRoot);
+const surfViz = new THREE.Group(); roomRoot.add(surfViz);
 
-// блоки — один InstancedMesh с цветами
-const cubeGeo = new THREE.BoxGeometry(S, S, S);
-const blockMesh = new THREE.InstancedMesh(cubeGeo, new THREE.MeshLambertMaterial(), W * H * D);
-blockMesh.count = 0; worldRoot.add(blockMesh);
-const _m4 = new THREE.Matrix4(), _c = new THREE.Color();
-const cellPos = (x, y, z) => new THREE.Vector3((x - W / 2 + 0.5) * S, (y + 0.5) * S, (z - D / 2 + 0.5) * S);
+const cubeGeo = new THREE.BoxGeometry(S, S, S), blockMat = new THREE.MeshLambertMaterial();
+const planeGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+const planeEdges = new THREE.EdgesGeometry(planeGeo);
+const matSurf = new THREE.MeshBasicMaterial({ color: 0x5ef2ff, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
+const matSurfHover = new THREE.MeshBasicMaterial({ color: 0xf87171, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false });
+const matHidden = new THREE.MeshBasicMaterial({ visible: false });
+const edgeMark = new THREE.LineBasicMaterial({ color: 0x5ef2ff }), edgeWorld = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.18 });
+const _c = new THREE.Color(), _m4 = new THREE.Matrix4(), _inv = new THREE.Matrix4();
+const cellPos = (x, y, z) => new THREE.Vector3((x + 0.5) * S, (y + 0.5) * S, (z + 0.5) * S);
 function hash(x, y, z) { const h = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453; return h - Math.floor(h); }
-function rebuildBlocks() {
-  worldDirty = false; let n = 0;
-  for (let y = 0; y < H; y++) for (let z = 0; z < D; z++) for (let x = 0; x < W; x++) {
-    const t = blocks[idx(x, y, z)]; if (!t) continue;
-    if (get(x + 1, y, z) && get(x - 1, y, z) && get(x, y + 1, z) && get(x, y - 1, z) && get(x, y, z + 1) && get(x, y, z - 1) && x > 0 && z > 0 && x < W - 1 && z < D - 1) continue;
-    const p = cellPos(x, y, z); _m4.makeTranslation(p.x, p.y, p.z); blockMesh.setMatrixAt(n, _m4);
-    _c.setHex(COLORS[t]).multiplyScalar(0.88 + hash(x, y, z) * 0.22); blockMesh.setColorAt(n, _c); n++;
+
+// прямоугольник (поверхность или превью)
+function makeRect(fillMat, edgeMat) {
+  const g = new THREE.Group(), fill = new THREE.Mesh(planeGeo, fillMat), edge = new THREE.LineSegments(planeEdges, edgeMat);
+  g.add(fill); fill.add(edge); g.userData.fill = fill; return g;
+}
+function setRect(g, a, b, d, y) {
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 0.001;
+  g.position.set(a[0], y + 0.002, a[1]); g.rotation.set(0, Math.atan2(-(b[1] - a[1]) / len, (b[0] - a[0]) / len), 0);
+  g.userData.fill.position.set(len / 2, 0, d / 2); g.userData.fill.scale.set(len, 1, d || 0.004);
+}
+function rebuildSurfViz() {
+  surfViz.clear();
+  surfaces.forEach(s => {
+    const g = makeRect(phase === 'mark' ? matSurf : matHidden, phase === 'mark' ? edgeMark : edgeWorld);
+    setRect(g, s.a, s.b, s.d, s.y); g.userData.fill.userData.sid = s.id; surfViz.add(g);
+  });
+  dirty = true;
+}
+const markPreview = makeRect(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false }), new THREE.LineBasicMaterial({ color: 0xffffff }));
+markPreview.visible = false; roomRoot.add(markPreview);
+const markDots = new THREE.Group(); roomRoot.add(markDots);
+const dotGeo = new THREE.SphereGeometry(0.008, 10, 8), dotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+// =============== Миры на поверхностях (чанки) ===============
+function makeChunk(s) {
+  const len = Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1]), w = Math.floor(len / S), dd = Math.floor(s.d / S);
+  if (w < 4 || dd < 4) return null;
+  const group = new THREE.Group();
+  group.position.set(s.a[0], s.y, s.a[1]); group.rotation.y = Math.atan2(-(s.b[1] - s.a[1]) / len, (s.b[0] - s.a[0]) / len);
+  roomRoot.add(group);
+  return { id: s.id, s, w, dd, blocks: new Uint8Array(w * dd * CH), group, mesh: null, cap: 0, dirty: true, area: w * dd };
+}
+const bi = (c, x, y, z) => x + c.w * (z + c.dd * y);
+const inXZ = (c, x, z) => x >= 0 && z >= 0 && x < c.w && z < c.dd;
+const inB = (c, x, y, z) => inXZ(c, x, z) && y >= 0 && y < CH;
+function get(c, x, y, z) { if (!inXZ(c, x, z) || y >= CH) return AIR; if (y < 0) return TABLE; return c.blocks[bi(c, x, y, z)]; }
+function set(c, x, y, z, t) { if (!inB(c, x, y, z)) return; c.blocks[bi(c, x, y, z)] = t; c.dirty = true; }
+function topY(c, x, z) { for (let y = CH - 1; y >= 0; y--) if (get(c, x, y, z)) return y + 1; return 0; }
+function standY(c, x, z) { for (let y = CH - 1; y >= 0; y--) { const b = get(c, x, y, z); if (b && b !== LEAF) return y + 1; } return 0; }
+function walkable(c, x, z) {
+  if (!inXZ(c, x, z)) return false;
+  const t = standY(c, x, z); if (t >= CH - 1) return false;
+  if (get(c, x, t, z) || get(c, x, t + 1, z)) return false;
+  return GROUNDS.has(get(c, x, t - 1, z));
+}
+function rebuildChunk(c) {
+  c.dirty = false;
+  let n = 0; for (let i = 0; i < c.blocks.length; i++) if (c.blocks[i]) n++;
+  if (n > c.cap || !c.mesh) {
+    if (c.mesh) { c.group.remove(c.mesh); c.mesh.dispose(); }
+    c.cap = Math.max(512, n * 2); c.mesh = new THREE.InstancedMesh(cubeGeo, blockMat, c.cap);
+    c.mesh.setColorAt(0, _c.set(0xffffff)); c.mesh.frustumCulled = false; c.group.add(c.mesh);
   }
-  blockMesh.count = n; blockMesh.instanceMatrix.needsUpdate = true; if (blockMesh.instanceColor) blockMesh.instanceColor.needsUpdate = true;
+  let k = 0;
+  for (let y = 0; y < CH; y++) for (let z = 0; z < c.dd; z++) for (let x = 0; x < c.w; x++) {
+    const t = c.blocks[bi(c, x, y, z)]; if (!t) continue;
+    const p = cellPos(x, y, z); _m4.makeTranslation(p.x, p.y, p.z); c.mesh.setMatrixAt(k, _m4);
+    _c.setHex(COLORS[t]).multiplyScalar(0.88 + hash(x, y, z) * 0.22); c.mesh.setColorAt(k, _c); k++;
+  }
+  c.mesh.count = k; c.mesh.instanceMatrix.needsUpdate = true; c.mesh.instanceColor.needsUpdate = true;
 }
 
-// жители
+function plantTree(c, x, z) {
+  if (!walkable(c, x, z)) return false;
+  const b = standY(c, x, z); if (b + 4 >= CH) return false;
+  for (let y = b; y < b + 4; y++) if (get(c, x, y, z)) return false;
+  if (villagers.some(v => v.c === c && Math.floor(v.x) === x && Math.floor(v.z) === z)) return false;
+  if (tribe.building?.c === c && tribe.building.cells.some(([p, , q]) => Math.abs(p - x) <= 1 && Math.abs(q - z) <= 1)) return false;
+  for (let y = b; y < b + 3; y++) set(c, x, y, z, LOG);
+  for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) for (let dy = 2; dy <= 3; dy++) {
+    if (dy === 3 && (dx || dz)) continue;
+    if (!get(c, x + dx, b + dy, z + dz) && inXZ(c, x + dx, z + dz)) set(c, x + dx, b + dy, z + dz, LEAF);
+  }
+  return true;
+}
+function removeTree(c, x, z) {
+  let base = -1; for (let y = 0; y < CH; y++) if (get(c, x, y, z) === LOG && get(c, x, y - 1, z) !== LOG) { base = y; break; }
+  if (base < 0) return 0;
+  let n = 0; for (let y = base; y < CH && get(c, x, y, z) === LOG; y++) { set(c, x, y, z, AIR); n++; }
+  for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) for (let y = base + 1; y <= base + 4; y++)
+    if (get(c, x + dx, y, z + dz) === LEAF) set(c, x + dx, y, z + dz, AIR);
+  return n;
+}
+function treeBases(c) {
+  const out = [];
+  for (let x = 0; x < c.w; x++) for (let z = 0; z < c.dd; z++) for (let y = 0; y < CH; y++) {
+    const b = c.blocks[bi(c, x, y, z)]; if (b === LOG) { if (get(c, x, y - 1, z) !== LOG) out.push([x, z]); break; } if (b && b !== LEAF) continue;
+  }
+  return out;
+}
+function seedChunk(c) {
+  const want = Math.max(2, Math.round(c.area / 120));
+  let t = 0; for (let k = 0; k < want * 10 && t < want; k++) if (plantTree(c, 1 + Math.floor(Math.random() * (c.w - 2)), 1 + Math.floor(Math.random() * (c.dd - 2)))) t++;
+}
+function removeChunk(id) {
+  const c = chunks.get(id); if (!c) return;
+  roomRoot.remove(c.group);
+  villagers = villagers.filter(v => v.c !== c);
+  tribe.houses = tribe.houses.filter(h => h.cid !== id);
+  if (tribe.building?.c === c) tribe.building = null;
+  chunks.delete(id);
+}
+function clearWorld() {
+  [...chunks.keys()].forEach(removeChunk); villagers = [];
+  Object.assign(tribe, { mana: 50, faith: 50, wood: 0, houses: [], building: null, popTimer: 0 });
+}
+function spawnFounders() {
+  const big = [...chunks.values()].sort((a, b) => b.area - a.area)[0]; if (!big) return;
+  for (let k = 0; k < 400 && villagers.length < 5; k++) {
+    const x = Math.floor(big.w / 2 + (Math.random() - 0.5) * Math.min(10, big.w - 2)), z = Math.floor(big.dd / 2 + (Math.random() - 0.5) * Math.min(10, big.dd - 2));
+    if (walkable(big, x, z)) addVillager(big, x + 0.5, z + 0.5);
+  }
+}
+function syncWorld() {
+  for (const s of surfaces) if (!chunks.has(s.id)) { const c = makeChunk(s); if (c) { chunks.set(s.id, c); seedChunk(c); } }
+  for (const id of [...chunks.keys()]) if (!surfaces.some(s => s.id === id)) removeChunk(id);
+  if (!villagers.length) spawnFounders();
+}
+
+// =============== Сохранение ===============
+function toB64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); return btoa(s); }
+function fromB64(b) { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+function saveGame() {
+  store.set(SKEY, { v: 2, phase, nextSid, surfaces,
+    chunks: [...chunks.values()].map(c => ({ id: c.id, blocks: toB64(c.blocks) })),
+    villagers: villagers.filter(v => !v.dead).map(v => ({ cid: v.c.id, x: v.x, z: v.z, y: v.y, shirt: v.shirt })),
+    houses: tribe.houses, mana: tribe.mana, faith: tribe.faith, wood: tribe.wood });
+}
+function loadGame() {
+  clearWorld(); surfaces = []; phase = 'mark';
+  const s = store.get(SKEY, null); if (!s || s.v !== 2) return;
+  try {
+    surfaces = s.surfaces || []; nextSid = s.nextSid || (Math.max(0, ...surfaces.map(x => x.id)) + 1);
+    for (const sc of s.chunks || []) {
+      const sf = surfaces.find(x => x.id === sc.id); if (!sf) continue;
+      const c = makeChunk(sf); if (!c) continue;
+      const b = fromB64(sc.blocks); if (b.length === c.blocks.length) c.blocks = b;
+      chunks.set(c.id, c);
+    }
+    (s.villagers || []).forEach(v => { const c = chunks.get(v.cid); if (c) addVillager(c, v.x, v.z, v.shirt, v.y); });
+    Object.assign(tribe, { houses: (s.houses || []).filter(h => chunks.has(h.cid)), mana: s.mana ?? 50, faith: s.faith ?? 50, wood: s.wood ?? 0, building: null });
+    phase = s.phase === 'world' && chunks.size ? 'world' : 'mark';
+  } catch (e) { console.warn(e); }
+}
+
+// =============== Жители ===============
 const SHIRTS = [0xe74c3c, 0x3498db, 0xf1c40f, 0x9b59b6, 0x1abc9c, 0xe67e22, 0xecf0f1];
-const vBodyGeo = new THREE.BoxGeometry(S * 0.5, S * 0.75, S * 0.35), vHeadGeo = new THREE.BoxGeometry(S * 0.42, S * 0.42, S * 0.42);
-const vLegGeo = new THREE.BoxGeometry(S * 0.45, S * 0.35, S * 0.3);
+const vBodyGeo = new THREE.BoxGeometry(S * 0.5, S * 0.75, S * 0.35), vHeadGeo = new THREE.BoxGeometry(S * 0.42, S * 0.42, S * 0.42), vLegGeo = new THREE.BoxGeometry(S * 0.45, S * 0.35, S * 0.3);
 const skinMat = new THREE.MeshLambertMaterial({ color: 0xf2c9a0 }), legMat = new THREE.MeshLambertMaterial({ color: 0x34495e });
-const hitGeo = new THREE.SphereGeometry(S * 0.9, 8, 6), hitMat = new THREE.MeshBasicMaterial({ visible: false });
-const sparkGeo = new THREE.OctahedronGeometry(S * 0.18), sparkMat = new THREE.MeshBasicMaterial({ color: 0xffe066 });
-function addVillager(x, z, shirt, y) {
+const hitGeo = new THREE.SphereGeometry(S * 1.1, 8, 6), sparkGeo = new THREE.OctahedronGeometry(S * 0.18), sparkMat = new THREE.MeshBasicMaterial({ color: 0xffe066 });
+function addVillager(c, x, z, shirt, y) {
   shirt = shirt ?? SHIRTS[Math.floor(Math.random() * SHIRTS.length)];
   const m = new THREE.Group();
   const legs = new THREE.Mesh(vLegGeo, legMat); legs.position.y = S * 0.175;
   const body = new THREE.Mesh(vBodyGeo, new THREE.MeshLambertMaterial({ color: shirt })); body.position.y = S * 0.72;
   const head = new THREE.Mesh(vHeadGeo, skinMat); head.position.y = S * 1.3;
   const spark = new THREE.Mesh(sparkGeo, sparkMat); spark.position.y = S * 1.9; spark.visible = false;
-  const hit = new THREE.Mesh(hitGeo, hitMat); hit.position.y = S * 0.7;
+  const hit = new THREE.Mesh(hitGeo, matHidden); hit.position.y = S * 0.7;
   m.add(legs, body, head, spark, hit);
-  const v = { x, z, y: y ?? standY(Math.floor(x), Math.floor(z)), vy: 0, shirt, mesh: m, body, spark, hit, state: 'idle', timer: Math.random() * 2, path: null, onArrive: null, held: null, target: null, dead: false, walkT: 0, prayT: 0 };
-  hit.userData.v = v; placeVillagerMesh(v); villagerGroup.add(m); villagers.push(v); return v;
+  const v = { c, x, z, y: y ?? standY(c, Math.floor(x), Math.floor(z)), vy: 0, fallFrom: null, shirt, mesh: m, body, spark, hit, state: 'idle', timer: Math.random() * 2, path: null, onArrive: null, held: null, target: null, dead: false, walkT: 0, prayT: 0 };
+  hit.userData.v = v; placeVillagerMesh(v); c.group.add(m); villagers.push(v); return v;
+}
+function placeVillagerMesh(v) {
+  const bob = v.state === 'walk' ? Math.abs(Math.sin(v.walkT)) * S * 0.12 : 0;
+  v.mesh.position.set(v.x * S, v.y * S + bob, v.z * S);
+}
+const fx = [];
+function burst(parent, pos, color) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(S * 0.6, 10, 8), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9, depthWrite: false }));
+  m.position.copy(pos); parent.add(m); fx.push({ m, t: 0, grow: 10 });
 }
 function killVillager(v, why) {
-  v.dead = true; villagerGroup.remove(v.mesh);
-  if (tribe.building && tribe.building.builder === v) tribe.building = null;
-  burst(v.mesh.position, 0xff5555);
+  v.dead = true; v.mesh.parent?.remove(v.mesh);
+  if (tribe.building?.builder === v) cancelBuild();
+  if (v.c) burst(v.c.group, v.mesh.position.clone(), 0xff5555);
   if (why) event(why);
 }
 
-// =============== Поиск пути (BFS по колонкам) ===============
-function findPath(sx, sz, goal) {
-  const key = (x, z) => x + z * W, prev = new Int16Array(W * D).fill(-1), seen = new Uint8Array(W * D);
-  const q = [[sx, sz]]; seen[key(sx, sz)] = 1;
-  while (q.length) {
-    const [x, z] = q.shift();
+// =============== Поиск пути ===============
+function findPath(c, sx, sz, goal) {
+  const W = c.w, key = (x, z) => x + z * W, prev = new Int32Array(c.w * c.dd).fill(-1), seen = new Uint8Array(c.w * c.dd);
+  const q = [[sx, sz]]; seen[key(sx, sz)] = 1; let qi = 0;
+  while (qi < q.length) {
+    const [x, z] = q[qi++];
     if (goal(x, z)) { const path = []; let k = key(x, z); while (k !== key(sx, sz)) { path.unshift([k % W, Math.floor(k / W)]); k = prev[k]; } return path; }
-    const t = standY(x, z);
+    const t = standY(c, x, z);
     for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const nx = x + dx, nz = z + dz; if (!walkable(nx, nz) || seen[key(nx, nz)]) continue;
-      if (Math.abs(standY(nx, nz) - t) > 1) continue;
+      const nx = x + dx, nz = z + dz; if (!walkable(c, nx, nz) || seen[key(nx, nz)]) continue;
+      if (Math.abs(standY(c, nx, nz) - t) > 1) continue;
       seen[key(nx, nz)] = 1; prev[key(nx, nz)] = key(x, z); q.push([nx, nz]);
     }
   }
@@ -282,93 +362,86 @@ function findPath(sx, sz, goal) {
 }
 const adj4 = (x, z) => [[x + 1, z], [x - 1, z], [x, z + 1], [x, z - 1]];
 
-// =============== ИИ жителей ===============
-function findHutSite(cx, cz) {
+// =============== ИИ ===============
+function findHutSite(c, cx, cz) {
   let best = null, bd = 1e9;
-  for (let x = 0; x < W - 1; x++) for (let z = 0; z < D - 1; z++) {
-    const cells = [[x, z], [x + 1, z], [x, z + 1], [x + 1, z + 1]];
-    const h = standY(x, z); if (h + 3 >= H) continue;
-    if (!cells.every(([a, b]) => walkable(a, b) && standY(a, b) === h && !get(a, h + 2, b))) continue;
-    if (villagers.some(v => !v.dead && cells.some(([a, b]) => Math.floor(v.x) === a && Math.floor(v.z) === b))) continue;
-    const d = Math.hypot(x - cx, z - cz); if (d < bd && d < 9) { bd = d; best = { x, z, h, cells }; }
+  for (let x = 0; x < c.w - 1; x++) for (let z = 0; z < c.dd - 1; z++) {
+    const d = Math.hypot(x - cx, z - cz); if (d >= bd || d > 14) continue;
+    const cells = [[x, z], [x + 1, z], [x, z + 1], [x + 1, z + 1]], h = standY(c, x, z); if (h + 3 >= CH) continue;
+    if (!cells.every(([a, b]) => walkable(c, a, b) && standY(c, a, b) === h && !get(c, a, h + 2, b))) continue;
+    if (villagers.some(v => v.c === c && !v.dead && cells.some(([a, b]) => Math.floor(v.x) === a && Math.floor(v.z) === b))) continue;
+    bd = d; best = { x, z, h, cells };
   }
   return best;
 }
 function decide(v) {
-  const cx = Math.floor(v.x), cz = Math.floor(v.z);
-  // строить дом
-  if (!tribe.building && tribe.wood >= HUT_COST && villagers.length >= tribe.houses.length * 2) {
-    const site = findHutSite(cx, cz);
+  const c = v.c, cx = Math.floor(v.x), cz = Math.floor(v.z);
+  const housesHere = tribe.houses.length;
+  if (!tribe.building && tribe.wood >= HUT_COST && villagers.length >= housesHere * 2) {
+    const site = findHutSite(c, cx, cz);
     if (site) {
       const inFoot = (a, b) => site.cells.some(([p, q]) => p === a && q === b);
-      const path = findPath(cx, cz, (a, b) => !inFoot(a, b) && site.cells.some(([p, q]) => Math.abs(p - a) + Math.abs(q - b) === 1) && Math.abs(standY(a, b) - site.h) <= 1);
+      const path = findPath(c, cx, cz, (a, b) => !inFoot(a, b) && site.cells.some(([p, q]) => Math.abs(p - a) + Math.abs(q - b) === 1) && Math.abs(standY(c, a, b) - site.h) <= 1);
       if (path) {
         const plan = [];
         for (let y = site.h; y < site.h + 2; y++) site.cells.forEach(([a, b]) => plan.push([a, y, b, PLANK]));
         site.cells.forEach(([a, b]) => plan.push([a, site.h + 2, b, ROOF]));
         tribe.wood -= HUT_COST;
-        tribe.building = { plan, i: 0, builder: v, cells: plan.map(p => p.slice(0, 3)) };
+        tribe.building = { c, plan, i: 0, builder: v, cells: plan.map(p => p.slice(0, 3)) };
         v.path = path; v.state = 'walk'; v.onArrive = 'build'; return;
       }
     }
   }
-  // рубить дерево
-  const trees = treeBases().filter(([x, z]) => !villagers.some(o => o !== v && o.target && o.target[0] === x && o.target[1] === z));
+  const trees = treeBases(c).filter(([x, z]) => !villagers.some(o => o !== v && o.c === c && o.target && o.target[0] === x && o.target[1] === z));
   if (trees.length && Math.random() < 0.85) {
     trees.sort((a, b) => Math.hypot(a[0] - cx, a[1] - cz) - Math.hypot(b[0] - cx, b[1] - cz));
     for (const [tx, tz] of trees.slice(0, 3)) {
-      const path = findPath(cx, cz, (a, b) => Math.abs(a - tx) + Math.abs(b - tz) === 1);
+      const path = findPath(c, cx, cz, (a, b) => Math.abs(a - tx) + Math.abs(b - tz) === 1);
       if (path) { v.target = [tx, tz]; v.path = path; v.state = 'walk'; v.onArrive = 'chop'; return; }
     }
   }
-  // побродить
-  const goalX = cx + Math.round((Math.random() - 0.5) * 6), goalZ = cz + Math.round((Math.random() - 0.5) * 6);
-  const path = findPath(cx, cz, (a, b) => a === goalX && b === goalZ);
-  if (path && path.length) { v.path = path.slice(0, 6); v.state = 'walk'; v.onArrive = null; }
+  const gx = cx + Math.round((Math.random() - 0.5) * 8), gz = cz + Math.round((Math.random() - 0.5) * 8);
+  const path = findPath(c, cx, cz, (a, b) => a === gx && b === gz);
+  if (path && path.length) { v.path = path.slice(0, 8); v.state = 'walk'; v.onArrive = null; }
   else { v.state = 'idle'; v.timer = 1 + Math.random() * 2; }
 }
-
-function placeVillagerMesh(v) {
-  const bob = v.state === 'walk' ? Math.abs(Math.sin(v.walkT)) * S * 0.12 : 0;
-  v.mesh.position.set((v.x - W / 2) * S, v.y * S + bob, (v.z - D / 2) * S);
-}
 function updateVillager(v, dt) {
-  if (v.held) return;
+  if (v.held || v.dead) return;
   stepVillager(v, dt);
   if (!v.dead && !v.held) placeVillagerMesh(v);
 }
 function stepVillager(v, dt) {
-  const cx = Math.floor(v.x), cz = Math.floor(v.z), ground = standY(cx, cz);
-  // гравитация
+  const c = v.c, cx = Math.floor(v.x), cz = Math.floor(v.z), ground = standY(c, cx, cz);
   if (v.y > ground + 0.01) {
-    v.vy -= 30 * dt; v.y += v.vy * dt;
-    if (v.y <= ground) { const fall = v.vy; v.y = ground; v.vy = 0;
-      if (fall < -16) { killVillager(v, 'Житель разбился. Народ в ужасе.'); tribe.faith -= 6; beep([200, 120], 0.2, 'sawtooth'); return; }
+    if (v.fallFrom == null) v.fallFrom = v.y;
+    v.vy -= 40 * dt; v.y += v.vy * dt;
+    if (v.y <= ground) {
+      const h = (v.fallFrom - ground) * S; v.y = ground; v.vy = 0; v.fallFrom = null;
+      if (h > FALL_DEATH) { killVillager(v, 'Житель разбился. Народ в ужасе.'); tribe.faith -= 6; beep([200, 120], 0.2, 'sawtooth'); return; }
       if (v.state === 'fall') { v.state = 'idle'; v.timer = 0.5; }
     }
     return;
   }
-  if (v.y < ground) v.y = ground; // блок поставили «в» жителя — выталкиваем наверх
+  v.fallFrom = null;
+  if (v.y < ground) v.y = ground;
   v.vy = 0;
   if (v.prayT > 0) { v.prayT -= dt; v.spark.visible = true; v.spark.position.y = S * (1.9 + (1 - v.prayT % 1) * 0.6); v.spark.rotation.y += dt * 4; return; }
   v.spark.visible = false;
-
-  if (v.state === 'idle') { v.timer -= dt; if (v.timer <= 0) decide(v); }
+  if (v.state === 'idle' || v.state === 'fall') { v.timer -= dt; if (v.timer <= 0) decide(v); }
   else if (v.state === 'walk') {
     if (!v.path || !v.path.length) { arrive(v); return; }
     const [nx, nz] = v.path[0];
-    if (!walkable(nx, nz) || Math.abs(standY(nx, nz) - ground) > 1) { v.path = null; v.state = 'idle'; v.timer = 0.3; if (v.onArrive === 'build') cancelBuild(); return; }
-    const tx = nx + 0.5, tz = nz + 0.5, dx = tx - v.x, dz = tz - v.z, d = Math.hypot(dx, dz), sp = 1.1 * dt;
+    if (!walkable(c, nx, nz) || Math.abs(standY(c, nx, nz) - ground) > 1) { v.path = null; v.state = 'idle'; v.timer = 0.3; if (v.onArrive === 'build') cancelBuild(); return; }
+    const tx = nx + 0.5, tz = nz + 0.5, dx = tx - v.x, dz = tz - v.z, d = Math.hypot(dx, dz), sp = 1.3 * dt;
     v.mesh.rotation.y = Math.atan2(dx, dz);
     if (d <= sp) { v.x = tx; v.z = tz; v.path.shift(); } else { v.x += dx / d * sp; v.z += dz / d * sp; }
-    v.y = standY(Math.floor(v.x), Math.floor(v.z)); v.walkT += dt * 14;
+    v.y = standY(c, Math.floor(v.x), Math.floor(v.z)); v.walkT += dt * 14;
   }
   else if (v.state === 'chop') {
     v.timer -= dt; v.body.rotation.x = Math.sin(v.timer * 14) * 0.35;
     if (v.timer <= 0) {
       v.body.rotation.x = 0;
-      const n = removeTree(v.target[0], v.target[1]);
-      if (n) { tribe.wood += 2; beep([300, 260], 0.06, 'square', 0.08, 0.06); }
+      if (removeTree(c, v.target[0], v.target[1])) { tribe.wood += 2; beep([300, 260], 0.06, 'square', 0.08, 0.06); }
       v.target = null; v.state = 'idle'; v.timer = 0.5;
     }
   }
@@ -378,10 +451,10 @@ function stepVillager(v, dt) {
     if (v.timer <= 0) {
       v.timer = 0.9;
       const [x, y, z, t] = b.plan[b.i];
-      if (!get(x, y, z)) { set(x, y, z, t); villagers.forEach(o => { if (Math.floor(o.x) === x && Math.floor(o.z) === z && o.y <= y) o.y = y + 1; }); beep([500 + b.i * 20], 0.04, 'triangle', 0, 0.05); }
+      if (!get(c, x, y, z)) { set(c, x, y, z, t); villagers.forEach(o => { if (o.c === c && Math.floor(o.x) === x && Math.floor(o.z) === z && o.y <= y) o.y = y + 1; }); beep([500 + b.i * 20], 0.04, 'triangle', 0, 0.05); }
       b.i++;
       if (b.i >= b.plan.length) {
-        tribe.houses.push({ cells: b.cells }); tribe.building = null; tribe.faith += 3;
+        tribe.houses.push({ cid: c.id, cells: b.cells }); tribe.building = null; tribe.faith += 3;
         v.body.rotation.x = 0; v.state = 'idle'; v.timer = 1;
         event(`Жители построили дом! Домов: ${tribe.houses.length}`); beep([523, 659, 784], 0.15, 'triangle', 0.1);
       }
@@ -389,77 +462,71 @@ function stepVillager(v, dt) {
   }
 }
 function arrive(v) {
-  v.path = null;
-  if (v.onArrive === 'chop' && v.target && get(v.target[0], topY(v.target[0], v.target[1]) - 1, v.target[1]) !== AIR) {
+  v.path = null; const c = v.c;
+  if (v.onArrive === 'chop' && v.target && treeBases(c).some(([x, z]) => x === v.target[0] && z === v.target[1])) {
     v.state = 'chop'; v.timer = 4; v.mesh.rotation.y = Math.atan2(v.target[0] + 0.5 - v.x, v.target[1] + 0.5 - v.z);
   } else if (v.onArrive === 'build' && tribe.building?.builder === v) { v.state = 'build'; v.timer = 0.4; }
   else { v.state = 'idle'; v.timer = 0.5 + Math.random() * 1.5; v.target = null; }
   v.onArrive = null;
 }
 function cancelBuild() { if (tribe.building) { tribe.wood += HUT_COST; tribe.building = null; } }
-
 function checkHouses() {
   for (let i = tribe.houses.length - 1; i >= 0; i--) {
-    const h = tribe.houses[i], alive = h.cells.filter(([x, y, z]) => get(x, y, z) === PLANK || get(x, y, z) === ROOF).length;
+    const h = tribe.houses[i], c = chunks.get(h.cid); if (!c) { tribe.houses.splice(i, 1); continue; }
+    const alive = h.cells.filter(([x, y, z]) => get(c, x, y, z) === PLANK || get(c, x, y, z) === ROOF).length;
     if (alive < h.cells.length / 2) { tribe.houses.splice(i, 1); tribe.faith -= 8; event('Ты разрушил дом! Жители напуганы.'); }
   }
 }
 
-// =============== Чудеса и эффекты ===============
-const drops = []; const dropGeo = new THREE.BoxGeometry(S * 0.06, S * 0.4, S * 0.06), dropMat = new THREE.MeshBasicMaterial({ color: 0x7fc8ff, transparent: true, opacity: 0.8 });
-function spawnDrops(cx, cz) {
+// =============== Чудеса ===============
+const drops = [], dropGeo = new THREE.BoxGeometry(S * 0.06, S * 0.4, S * 0.06), dropMat = new THREE.MeshBasicMaterial({ color: 0x7fc8ff, transparent: true, opacity: 0.8 });
+function spawnDrops(c, cx, cz) {
   for (let i = 0; i < 6; i++) {
-    const m = new THREE.Mesh(dropGeo, dropMat);
-    const x = cx + (Math.random() - 0.5) * 5, z = cz + (Math.random() - 0.5) * 5;
-    m.position.set((x - W / 2) * S, (H + 2 + Math.random() * 3) * S, (z - D / 2) * S);
-    fxGroup.add(m); drops.push({ m, ground: topY(Math.max(0, Math.min(W - 1, Math.floor(x))), Math.max(0, Math.min(D - 1, Math.floor(z)))) * S });
+    const x = cx + (Math.random() - 0.5) * 6, z = cz + (Math.random() - 0.5) * 6;
+    const gx = Math.max(0, Math.min(c.w - 1, Math.floor(x))), gz = Math.max(0, Math.min(c.dd - 1, Math.floor(z)));
+    const m = new THREE.Mesh(dropGeo, dropMat); m.position.set(x * S, (CH + 2 + Math.random() * 4) * S, z * S);
+    c.group.add(m); drops.push({ m, ground: topY(c, gx, gz) * S });
   }
 }
-const fx = [];
-function burst(pos, color) {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(S * 0.6, 10, 8), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9, depthWrite: false }));
-  m.position.copy(pos); fxGroup.add(m); fx.push({ m, t: 0, grow: 10 });
-}
-function lightning(cx, cz) {
-  const top = topY(cx, cz), pts = [], base = new THREE.Vector3((cx - W / 2 + 0.5) * S, top * S, (cz - D / 2 + 0.5) * S);
-  for (let i = 0; i <= 8; i++) pts.push(new THREE.Vector3(base.x + (i && i < 8 ? (Math.random() - 0.5) * S * 2 : 0), base.y + (8 - i) * S * 1.6, base.z + (i && i < 8 ? (Math.random() - 0.5) * S * 2 : 0)));
+function lightning(c, cx, cz) {
+  const top = topY(c, cx, cz), base = new THREE.Vector3((cx + 0.5) * S, top * S, (cz + 0.5) * S), pts = [];
+  for (let i = 0; i <= 8; i++) pts.push(new THREE.Vector3(base.x + (i && i < 8 ? (Math.random() - 0.5) * S * 2 : 0), base.y + (8 - i) * S * 2, base.z + (i && i < 8 ? (Math.random() - 0.5) * S * 2 : 0)));
   const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true }));
-  fxGroup.add(line); fx.push({ m: line, t: 0, grow: 0 });
-  burst(base, 0xffffff); thunder();
-  // разрушение верхних блоков
+  c.group.add(line); fx.push({ m: line, t: 0, grow: 0 }); burst(c.group, base, 0xffffff); thunder();
   for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++) {
-    const x = cx + dx, z = cz + dz; if (x < 0 || z < 0 || x >= W || z >= D) continue;
-    const t = topY(x, z); if (t > 1 && (Math.abs(dx) + Math.abs(dz) < 2 || Math.random() < 0.5)) {
-      const b = get(x, t - 1, z); if (b === LOG || b === LEAF) removeTree(x, z); else set(x, t - 1, z, AIR);
+    const x = cx + dx, z = cz + dz; if (!inXZ(c, x, z)) continue;
+    const t = topY(c, x, z); if (t > 0 && (Math.abs(dx) + Math.abs(dz) < 2 || Math.random() < 0.5)) {
+      const b = get(c, x, t - 1, z); if (b === LOG) removeTree(c, x, z); else set(c, x, t - 1, z, AIR);
     }
   }
   let killed = 0, near = 0;
-  villagers.forEach(v => { if (v.dead || v.held) return; const d = Math.hypot(v.x - (cx + 0.5), v.z - (cz + 0.5)); if (d < 1.6) { killVillager(v); killed++; } else if (d < 5) near++; });
+  villagers.forEach(v => { if (v.dead || v.held || v.c !== c) return; const d = Math.hypot(v.x - (cx + 0.5), v.z - (cz + 0.5)); if (d < 1.6) { killVillager(v); killed++; } else if (d < 6) near++; });
   if (killed) { tribe.faith -= 12 * killed; tribe.mana = Math.min(MANA_MAX, tribe.mana + 5 * killed); event(killed > 1 ? `Молния убила ${killed} жителей. Тебя боятся.` : 'Молния убила жителя. Тебя боятся.'); }
   else if (near) { tribe.faith += 2; event('Жители в благоговении перед твоей мощью.'); }
   checkHouses();
 }
-
 function updateFx(dt) {
-  for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; d.m.position.y -= dt * 0.5; if (d.m.position.y <= d.ground) { fxGroup.remove(d.m); drops.splice(i, 1); } }
+  for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; d.m.position.y -= dt * 0.4; if (d.m.position.y <= d.ground) { d.m.parent?.remove(d.m); drops.splice(i, 1); } }
   for (let i = fx.length - 1; i >= 0; i--) {
     const f = fx[i]; f.t += dt; if (f.grow) f.m.scale.multiplyScalar(1 + dt * f.grow);
     f.m.material.opacity = Math.max(0, 1 - f.t * 3.5);
-    if (f.t > 0.3) { fxGroup.remove(f.m); fx.splice(i, 1); }
+    if (f.t > 0.3) { f.m.parent?.remove(f.m); fx.splice(i, 1); }
   }
 }
 
-// =============== Меню на руке ===============
+// =============== Меню ===============
 const PW = 512, PH = 768;
 const pcan = document.createElement('canvas'); pcan.width = PW; pcan.height = PH;
-const pctx = pcan.getContext('2d'); const ptex = new THREE.CanvasTexture(pcan); ptex.colorSpace = THREE.SRGBColorSpace;
+const pctx = pcan.getContext('2d'), ptex = new THREE.CanvasTexture(pcan); ptex.colorSpace = THREE.SRGBColorSpace;
 const panel = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.3), new THREE.MeshBasicMaterial({ map: ptex, transparent: true, side: THREE.DoubleSide, depthTest: false }));
 panel.renderOrder = 10; scene.add(panel);
-let buttons = [], hoverId = null, dirty = true;
-
-let tool = 'build', matIdx = 0, placing = false, placed = false, statusNote = '', confirmNew = false;
-const HINTS = { build: 'Наведи на блок и нажми — поставить блок (1 маны).', dig: 'Наведи на блок и нажми — убрать его.', grab: 'Схвати жителя (лучом или рукой), отпусти где нужно.', rain: 'Держи курок над землёй — пойдёт дождь.', bolt: `Нажми — удар молнии (${COST_BOLT} маны).` };
-
+let buttons = [], hoverId = null;
+const HINTS = {
+  add: ['Коснись белым шариком угла поверхности и нажми курок.', 'Теперь второй угол той же стороны.', 'И любую точку у противоположного края.'],
+  del: 'Наведи луч на поверхность и нажми — удалить (мир на ней пропадёт).',
+  build: 'Наведи на стол или блок и нажми — поставить блок (1 маны).', dig: 'Наведи на блок и нажми — убрать его.',
+  grab: 'Схвати жителя (лучом или рукой) и отпусти над мебелью.', rain: 'Держи курок — пойдёт дождь. Растит лес.', bolt: `Нажми — удар молнии (${COST_BOLT} маны).`,
+};
 function rr(x, y, w, h, r) { pctx.beginPath(); if (pctx.roundRect) pctx.roundRect(x, y, w, h, r); else pctx.rect(x, y, w, h); }
 function wrap(text, x, y, maxW, lh) {
   let line = ''; for (const w of text.split(' ')) { const t = line ? line + ' ' + w : w; if (pctx.measureText(t).width > maxW && line) { pctx.fillText(line, x, y); y += lh; line = w; } else line = t; }
@@ -468,55 +535,66 @@ function wrap(text, x, y, maxW, lh) {
 function bar(y, label, val, color) {
   pctx.fillStyle = '#8b93a7'; pctx.font = '24px system-ui, sans-serif'; pctx.textAlign = 'left'; pctx.fillText(label, 24, y);
   rr(130, y - 14, 300, 28, 14); pctx.fillStyle = '#262b36'; pctx.fill();
-  rr(130, y - 14, Math.max(0, 300 * val / 100), 28, 14); pctx.fillStyle = color; pctx.fill();
+  rr(130, y - 14, Math.max(1, 300 * val / 100), 28, 14); pctx.fillStyle = color; pctx.fill();
   pctx.fillStyle = '#e8eaf0'; pctx.textAlign = 'right'; pctx.fillText(String(Math.round(val)), 490, y);
 }
+function twoClick(flag, set, fn) { if (!flag) { set(true); setTimeout(() => { set(false); dirty = true; }, 3000); } else { set(false); fn(); } dirty = true; }
 function drawPanel() {
   dirty = false; buttons = [];
-  pctx.clearRect(0, 0, PW, PH); rr(0, 0, PW, PH, 28); pctx.fillStyle = 'rgba(15,17,21,0.93)'; pctx.fill();
-  pctx.textBaseline = 'middle';
+  pctx.clearRect(0, 0, PW, PH); rr(0, 0, PW, PH, 28); pctx.fillStyle = 'rgba(15,17,21,0.93)'; pctx.fill(); pctx.textBaseline = 'middle';
   const B = (id, label, x, y, w, h, o = {}) => {
-    buttons.push({ id, x, y, w, h, action: o.action }); rr(x, y, w, h, 16);
-    pctx.fillStyle = o.danger ? (hoverId === id ? '#b91c1c' : '#7f1d1d') : o.active ? '#ffd23f' : (hoverId === id ? '#3a4150' : '#262b36'); pctx.fill();
-    pctx.fillStyle = o.active ? '#2a2000' : '#e8eaf0'; pctx.font = `600 ${o.fs || 28}px system-ui, sans-serif`; pctx.textAlign = 'center'; pctx.fillText(label, x + w / 2, y + h / 2);
+    buttons.push({ id, x, y, w, h, action: o.disabled ? null : o.action }); rr(x, y, w, h, 16);
+    pctx.fillStyle = o.danger ? (hoverId === id ? '#b91c1c' : '#7f1d1d') : o.active ? '#ffd23f' : o.primary ? (hoverId === id ? '#7ff7ff' : '#5ef2ff') : (hoverId === id ? '#3a4150' : '#262b36');
+    pctx.globalAlpha = o.disabled ? 0.35 : 1; pctx.fill();
+    pctx.fillStyle = (o.active || o.primary) ? '#10181a' : '#e8eaf0'; pctx.font = `600 ${o.fs || 28}px system-ui, sans-serif`; pctx.textAlign = 'center'; pctx.fillText(label, x + w / 2, y + h / 2);
+    pctx.globalAlpha = 1;
   };
-  pctx.textAlign = 'left'; pctx.fillStyle = '#e8eaf0'; pctx.font = '700 36px system-ui, sans-serif'; pctx.fillText('Бог стола', 24, 42);
-  if (!placed || placing) {
-    pctx.fillStyle = '#8b93a7'; pctx.font = '26px system-ui, sans-serif';
-    wrap(statusNote || 'Положи правый контроллер (или кончики пальцев) в центр стола и нажми курок — там появится мир.', 24, 110, PW - 48, 34);
-    if (placing && placed) B('cancel', 'Отмена', 20, 640, 472, 76, { action: () => { placing = false; dirty = true; } });
-    ptex.needsUpdate = true; return;
+  const note = (t, y) => { pctx.textAlign = 'left'; pctx.fillStyle = tribe.eventT > 0 ? '#ffd27a' : '#8b93a7'; pctx.font = '24px system-ui, sans-serif'; wrap(tribe.eventT > 0 ? tribe.event : t, 24, y, PW - 48, 30); };
+  pctx.textAlign = 'left'; pctx.fillStyle = '#e8eaf0'; pctx.font = '700 34px system-ui, sans-serif';
+  if (!roomReady) { pctx.fillText('Бог стола', 24, 42); pctx.fillStyle = '#8b93a7'; pctx.font = '26px system-ui, sans-serif'; pctx.fillText('Ищу твою комнату…', 24, 110); ptex.needsUpdate = true; return; }
+  if (phase === 'mark') {
+    pctx.fillText('Разметка поверхностей', 24, 42);
+    note(tool === 'add' ? HINTS.add[markPts.length] : HINTS.del, 100);
+    B('add', '+ Поверхность', 20, 210, 230, 80, { active: tool === 'add', fs: 26, action: () => { tool = 'add'; markPts = []; rebuildSurfViz(); } });
+    B('del', 'Удалить', 262, 210, 230, 80, { active: tool === 'del', action: () => { tool = 'del'; markPts = []; } });
+    B('undo', 'Отменить точку', 20, 300, 472, 70, { action: () => { markPts.pop(); } });
+    B('go', chunks.size ? '✓ Вернуться в мир' : '✓ Создать мир', 20, 390, 472, 96, { primary: true, fs: 34, disabled: !surfaces.length, action: startWorld });
+    B('wipe', confirmA ? 'Точно? Всё сотрётся' : 'Стереть разметку', 20, 506, 472, 66, { danger: true, fs: 26, action: () => twoClick(confirmA, v => confirmA = v, () => { clearWorld(); surfaces = []; markPts = []; rebuildSurfViz(); saveGame(); }) });
+    pctx.textAlign = 'left'; pctx.fillStyle = '#8b93a7'; pctx.font = '22px system-ui, sans-serif';
+    pctx.fillText(`Поверхностей: ${surfaces.length}${anchorNote ? ' · ' + anchorNote : ''}`, 24, 610);
+    wrap('Совет: размечай всё, где должен жить народ — столы, полки, подоконник.', 24, 650, PW - 48, 28);
+  } else {
+    pctx.fillText('Бог стола', 24, 42);
+    bar(98, 'Мана', tribe.mana, '#5ea8ff'); bar(142, 'Вера', Math.max(0, Math.min(100, tribe.faith)), '#ffd23f');
+    pctx.textAlign = 'left'; pctx.fillStyle = '#e8eaf0'; pctx.font = '24px system-ui, sans-serif';
+    pctx.fillText(`👤 ${villagers.length}/${3 + tribe.houses.length * 2}   🏠 ${tribe.houses.length}   🪵 ${tribe.wood}`, 24, 186);
+    note(HINTS[tool], 226);
+    const T = (id, label, x, y) => B(id, label, x, y, 150, 76, { active: tool === id, action: () => { tool = id; } });
+    T('build', 'Строить', 20, 290); T('dig', 'Копать', 181, 290); T('grab', 'Взять', 342, 290);
+    B('rain', '🌧 Дождь', 20, 376, 230, 76, { active: tool === 'rain', action: () => { tool = 'rain'; } });
+    B('bolt', '⚡ Молния', 262, 376, 230, 76, { active: tool === 'bolt', action: () => { tool = 'bolt'; } });
+    B('mat', `Материал: ${MATERIALS[matIdx][1]} ⟳`, 20, 462, 472, 70, { action: () => { matIdx = (matIdx + 1) % MATERIALS.length; tool = 'build'; } });
+    B('mark', 'Разметка поверхностей', 20, 542, 472, 66, { fs: 26, action: () => { saveGame(); phase = 'mark'; tool = 'add'; markPts = []; rebuildSurfViz(); } });
+    B('new', confirmB ? 'Точно? Мир исчезнет' : 'Новый мир', 20, 618, 472, 62, { danger: true, fs: 26, action: () => twoClick(confirmB, v => confirmB = v, () => { clearWorld(); syncWorld(); saveGame(); event('Новый мир создан.'); }) });
   }
-  bar(100, 'Мана', tribe.mana, '#5ea8ff'); bar(146, 'Вера', Math.max(0, Math.min(100, tribe.faith)), '#ffd23f');
-  const cap = 3 + tribe.houses.length * 2;
-  pctx.textAlign = 'left'; pctx.fillStyle = '#e8eaf0'; pctx.font = '24px system-ui, sans-serif';
-  pctx.fillText(`👤 ${villagers.length}/${cap}   🏠 ${tribe.houses.length}   🪵 ${tribe.wood}`, 24, 192);
-  pctx.fillStyle = tribe.eventT > 0 ? '#ffd27a' : '#8b93a7'; pctx.font = '22px system-ui, sans-serif';
-  wrap(tribe.eventT > 0 ? tribe.event : HINTS[tool], 24, 232, PW - 48, 28);
-  const T = (id, label, x, y) => B(id, label, x, y, 150, 76, { active: tool === id, action: () => { tool = id; dirty = true; } });
-  T('build', 'Строить', 20, 290); T('dig', 'Копать', 181, 290); T('grab', 'Взять', 342, 290);
-  B('rain', '🌧 Дождь', 20, 376, 230, 76, { active: tool === 'rain', action: () => { tool = 'rain'; dirty = true; } });
-  B('bolt', '⚡ Молния', 262, 376, 230, 76, { active: tool === 'bolt', action: () => { tool = 'bolt'; dirty = true; } });
-  B('mat', `Материал: ${MATERIALS[matIdx][1]} ⟳`, 20, 462, 472, 70, { action: () => { matIdx = (matIdx + 1) % MATERIALS.length; tool = 'build'; dirty = true; } });
-  B('move', 'Переставить мир', 20, 542, 472, 66, { fs: 26, action: () => { placing = true; statusNote = ''; dirty = true; } });
-  B('new', confirmNew ? 'Точно? Ещё раз' : 'Новый мир', 20, 618, 472, 62, { danger: true, fs: 26, action: () => {
-    if (!confirmNew) { confirmNew = true; setTimeout(() => { confirmNew = false; dirty = true; }, 3000); return; }
-    confirmNew = false; genWorld(); saveGame();
-  } });
-  if (statusNote) { pctx.fillStyle = '#8b93a7'; pctx.font = '20px system-ui, sans-serif'; pctx.textAlign = 'left'; pctx.fillText(statusNote, 24, 726); }
   ptex.needsUpdate = true;
+}
+function startWorld() {
+  phase = 'world'; tool = 'build'; markPts = []; markPreview.visible = false; markDots.clear();
+  const fresh = !chunks.size; syncWorld(); rebuildSurfViz(); saveGame();
+  event(fresh ? 'Мир создан! Жители ждут знака.' : 'Мир обновлён.'); beep([392, 523, 659, 784], 0.18, 'triangle', 0.09);
 }
 
 // =============== Контроллеры ===============
 const pointers = [], raycaster = new THREE.Raycaster();
-const cursor = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(S * 1.04, S * 1.04, S * 1.04)), new THREE.LineBasicMaterial({ color: 0xffffff }));
-cursor.visible = false; worldRoot.add(cursor);
+const cursor = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(S * 1.05, S * 1.05, S * 1.05)), new THREE.LineBasicMaterial({ color: 0xffffff }));
+cursor.visible = false; roomRoot.add(cursor);
 for (let i = 0; i < 2; i++) {
   const c = renderer.xr.getController(i), g = renderer.xr.getControllerGrip(i); scene.add(c); scene.add(g);
   const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 0, -1)]), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 }));
   line.scale.z = 2; c.add(line);
-  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.012, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffffff })));
-  const P = { c, g, line, src: null, hand: null, down: false, held: null, rainAcc: 0 };
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.007, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffffff })); c.add(tip);
+  const P = { c, g, line, tip, src: null, hand: null, down: false, held: null, rainAcc: 0 };
   pointers.push(P);
   c.addEventListener('connected', e => { P.src = e.data; P.hand = e.data.handedness; if (P.hand === 'left') attachPanel(P); });
   c.addEventListener('disconnected', () => { if (P.hand === 'left') detachPanel(); P.src = null; P.hand = null; });
@@ -532,72 +610,60 @@ function detachPanel() {
   panel.position.copy(pos).addScaledVector(dir, 0.55); panel.position.y -= 0.25; panel.lookAt(pos.x, panel.position.y, pos.z);
 }
 function haptic(P, s = 0.4, ms = 30) { try { P.src?.gamepad?.hapticActuators?.[0]?.pulse(s, ms); } catch {} }
-function rayWorld(P) {
-  P.c.updateMatrixWorld(true);
-  return { o: new THREE.Vector3().setFromMatrixPosition(P.c.matrixWorld), d: new THREE.Vector3(0, 0, -1).transformDirection(P.c.matrixWorld) };
-}
+function rayWorld(P) { P.c.updateMatrixWorld(true); return { o: new THREE.Vector3().setFromMatrixPosition(P.c.matrixWorld), d: new THREE.Vector3(0, 0, -1).transformDirection(P.c.matrixWorld) }; }
+function tipLocal(P) { P.c.updateMatrixWorld(true); return roomRoot.worldToLocal(new THREE.Vector3().setFromMatrixPosition(P.c.matrixWorld)); }
 function panelHit(P) {
   if (P === panelOwner) return null;
   const { o, d } = rayWorld(P); raycaster.set(o, d); const h = raycaster.intersectObject(panel, false)[0]; if (!h) return null;
   const x = h.uv.x * PW, y = (1 - h.uv.y) * PH;
   return { dist: h.distance, btn: buttons.find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) || null };
 }
+function surfaceRay(P) {
+  const { o, d } = rayWorld(P); raycaster.set(o, d);
+  const h = raycaster.intersectObjects(surfViz.children.map(g => g.userData.fill), false)[0];
+  return h ? h.object.userData.sid : null;
+}
 
-// Луч по вокселям (Amanatides–Woo) в координатах мира
-const _inv = new THREE.Matrix4();
-function voxelRay(P) {
-  const { o, d } = rayWorld(P); _inv.copy(worldRoot.matrixWorld).invert(); o.applyMatrix4(_inv); d.transformDirection(_inv);
-  let ox = o.x / S + W / 2, oy = o.y / S, oz = o.z / S + D / 2; const dx = d.x, dy = d.y, dz = d.z;
-  // вход в коробку мира
-  let tmin = 0, tmax = 200;
-  for (const [oo, dd, lo, hi] of [[ox, dx, 0, W], [oy, dy, 0, H], [oz, dz, 0, D]]) {
+// луч по вокселям всех поверхностей (слой -1 = сам стол)
+function voxelRayChunk(c, oW, dW) {
+  c.group.updateMatrixWorld(true); _inv.copy(c.group.matrixWorld).invert();
+  const o = oW.clone().applyMatrix4(_inv), d = dW.clone().transformDirection(_inv);
+  const ox = o.x / S, oy = o.y / S, oz = o.z / S, dx = d.x, dy = d.y, dz = d.z;
+  let tmin = 0, tmax = 1e5;
+  for (const [oo, dd, lo, hi] of [[ox, dx, 0, c.w], [oy, dy, -1, CH], [oz, dz, 0, c.dd]]) {
     if (Math.abs(dd) < 1e-9) { if (oo < lo || oo > hi) return null; continue; }
     let t1 = (lo - oo) / dd, t2 = (hi - oo) / dd; if (t1 > t2) [t1, t2] = [t2, t1];
     tmin = Math.max(tmin, t1); tmax = Math.min(tmax, t2); if (tmin > tmax) return null;
   }
-  const e = tmin + 1e-4; let px = ox + dx * e, py = oy + dy * e, pz = oz + dz * e;
-  let x = Math.min(W - 1, Math.floor(px)), y = Math.min(H - 1, Math.floor(py)), z = Math.min(D - 1, Math.floor(pz));
-  const sx = Math.sign(dx), sy = Math.sign(dy), sz = Math.sign(dz);
-  const tdx = Math.abs(1 / dx), tdy = Math.abs(1 / dy), tdz = Math.abs(1 / dz);
-  let tx = dx ? ((sx > 0 ? x + 1 - px : px - x) * tdx) : Infinity, ty = dy ? ((sy > 0 ? y + 1 - py : py - y) * tdy) : Infinity, tz = dz ? ((sz > 0 ? z + 1 - pz : pz - z) * tdz) : Infinity;
-  let n = [0, 0, 0];
-  // нормаль входной грани
-  if (tmin > 0) { const ex = ox + dx * tmin, ey = oy + dy * tmin, ez = oz + dz * tmin;
-    if (Math.abs(ey) < 1e-3 || Math.abs(ey - H) < 1e-3) n = [0, -sy, 0]; else if (Math.abs(ex) < 1e-3 || Math.abs(ex - W) < 1e-3) n = [-sx, 0, 0]; else n = [0, 0, -sz]; }
-  for (let i = 0; i < 120; i++) {
-    if (!inB(x, y, z)) return null;
-    if (get(x, y, z)) return { x, y, z, n };
-    if (tx < ty && tx < tz) { x += sx; tx += tdx; n = [-sx, 0, 0]; }
-    else if (ty < tz) { y += sy; ty += tdy; n = [0, -sy, 0]; }
-    else { z += sz; tz += tdz; n = [0, 0, -sz]; }
+  const e = tmin + 1e-4, px = ox + dx * e, py = oy + dy * e, pz = oz + dz * e;
+  let x = Math.max(0, Math.min(c.w - 1, Math.floor(px))), y = Math.max(-1, Math.min(CH - 1, Math.floor(py))), z = Math.max(0, Math.min(c.dd - 1, Math.floor(pz)));
+  const sx = Math.sign(dx), sy = Math.sign(dy), sz = Math.sign(dz), tdx = Math.abs(1 / dx), tdy = Math.abs(1 / dy), tdz = Math.abs(1 / dz);
+  let tx = dx ? (sx > 0 ? x + 1 - px : px - x) * tdx : Infinity, ty = dy ? (sy > 0 ? y + 1 - py : py - y) * tdy : Infinity, tz = dz ? (sz > 0 ? z + 1 - pz : pz - z) * tdz : Infinity;
+  let n = [0, 0, 0], tc = 0;
+  if (tmin > 0) { const ex = ox + dx * tmin, ey = oy + dy * tmin;
+    if (Math.abs(ey + 1) < 1e-3 || Math.abs(ey - CH) < 1e-3) n = [0, -sy, 0]; else if (Math.abs(ex) < 1e-3 || Math.abs(ex - c.w) < 1e-3) n = [-sx, 0, 0]; else n = [0, 0, -sz]; }
+  for (let i = 0; i < 500; i++) {
+    if (!inXZ(c, x, z) || y < -1 || y >= CH) return null;
+    if (get(c, x, y, z)) return { c, x, y, z, n, dist: (e + tc) * S };
+    if (tx < ty && tx < tz) { x += sx; tc = tx; tx += tdx; n = [-sx, 0, 0]; }
+    else if (ty < tz) { y += sy; tc = ty; ty += tdy; n = [0, -sy, 0]; }
+    else { z += sz; tc = tz; tz += tdz; n = [0, 0, -sz]; }
   }
   return null;
 }
-function villagerRay(P) {
-  const { o, d } = rayWorld(P); raycaster.set(o, d);
-  const h = raycaster.intersectObjects(villagers.filter(v => !v.dead).map(v => v.hit), false)[0];
-  return h ? h.object.userData.v : null;
-}
-function villagerTouch(P) {
-  P.g.updateMatrixWorld(true); const p = new THREE.Vector3().setFromMatrixPosition(P.g.matrixWorld);
-  let best = null, bd = 0.06;
-  villagers.forEach(v => { if (v.dead) return; const w = new THREE.Vector3(); v.hit.getWorldPosition(w); const dd = w.distanceTo(p); if (dd < bd) { bd = dd; best = v; } });
+function voxelRay(P) {
+  const { o, d } = rayWorld(P); let best = null;
+  for (const c of chunks.values()) { const h = voxelRayChunk(c, o, d); if (h && (!best || h.dist < best.dist)) best = h; }
   return best;
 }
-
-// =============== Размещение мира на столе ===============
-let anchor = null, pendingPose = null, wantAnchor = false;
-function placeWorld(P) {
-  const src = P.src; const useHand = !!src?.hand;
-  const pos = new THREE.Vector3();
-  if (useHand) { P.c.updateMatrixWorld(true); pos.setFromMatrixPosition(P.c.matrixWorld); pos.y -= 0.01; }
-  else { P.g.updateMatrixWorld(true); pos.setFromMatrixPosition(P.g.matrixWorld); pos.y -= 0.03; }
-  const cam = renderer.xr.getCamera(), f = new THREE.Vector3(); cam.getWorldDirection(f); f.y = 0; f.normalize();
-  const quat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(-f.x, -f.z));
-  pendingPose = { pos, quat }; anchor = null; wantAnchor = true;
-  worldRoot.matrix.compose(pos, quat, new THREE.Vector3(1, 1, 1)); worldRoot.matrixWorldNeedsUpdate = true; worldRoot.updateMatrixWorld(true);
-  placing = false; placed = true; worldRoot.visible = true; statusNote = '';
-  beep([392, 523, 659, 784], 0.18, 'triangle', 0.09); haptic(P, 0.8, 80); dirty = true; saveGame();
+function villagerPick(P) {
+  P.g.updateMatrixWorld(true); const gp = new THREE.Vector3().setFromMatrixPosition(P.g.matrixWorld);
+  let best = null, bd = 0.05;
+  villagers.forEach(v => { if (v.dead || v.held) return; const w = v.hit.getWorldPosition(new THREE.Vector3()), dd = w.distanceTo(gp); if (dd < bd) { bd = dd; best = v; } });
+  if (best) return best;
+  const { o, d } = rayWorld(P); raycaster.set(o, d);
+  const h = raycaster.intersectObjects(villagers.filter(v => !v.dead && !v.held).map(v => v.hit), false)[0];
+  return h ? h.object.userData.v : null;
 }
 
 // =============== Ввод ===============
@@ -605,93 +671,131 @@ function onSelectStart(P) {
   P.down = true;
   const ph = panelHit(P);
   if (ph) { if (ph.btn?.action) { ph.btn.action(); haptic(P, 0.3, 20); beep([880], 0.05); dirty = true; } P.down = false; return; }
-  if (!placed || placing) { if (P !== panelOwner || !pointers.some(o => o.src && o !== panelOwner)) placeWorld(P); return; }
+  if (!roomReady) return;
+  if (phase === 'mark') {
+    if (tool === 'del') {
+      const sid = surfaceRay(P); if (sid == null) return;
+      surfaces = surfaces.filter(s => s.id !== sid); removeChunk(sid); rebuildSurfViz(); saveGame(); beep([300, 200], 0.1, 'square'); haptic(P, 0.6, 50); return;
+    }
+    markPts.push(tipLocal(P)); haptic(P, 0.5, 30); beep([600 + markPts.length * 120], 0.07);
+    if (markPts.length === 3) {
+      const [p0, p1, p2] = markPts; markPts = [];
+      const len = Math.hypot(p1.x - p0.x, p1.z - p0.z);
+      if (len < 0.08) { event('Слишком маленькая сторона — минимум 8 см.'); return; }
+      const ux = (p1.x - p0.x) / len, uz = (p1.z - p0.z) / len, nx = -uz, nz = ux;
+      let d = (p2.x - p0.x) * nx + (p2.z - p0.z) * nz, a = [p0.x, p0.z], b = [p1.x, p1.z];
+      if (d < 0) { [a, b] = [b, a]; d = -d; }
+      if (d < 0.08) { event('Слишком узко — минимум 8 см.'); return; }
+      const y = (p0.y + p1.y + p2.y) / 3;
+      surfaces.push({ id: nextSid++, a, b, d, y }); rebuildSurfViz(); saveGame();
+      event(`Готово: ${Math.round(len * 100)}×${Math.round(d * 100)} см на высоте ${Math.round(y * 100)} см.`); beep([523, 659, 784], 0.12, 'triangle', 0.08);
+    }
+    dirty = true; return;
+  }
+  // ---- мир ----
   if (tool === 'grab') {
-    const v = villagerTouch(P) || villagerRay(P);
-    if (v) { v.held = P; P.held = v; v.state = 'idle'; v.path = null; if (tribe.building?.builder === v) cancelBuild(); haptic(P, 0.5, 40); beep([660, 880], 0.06); }
+    const v = villagerPick(P);
+    if (v) {
+      v.held = P; P.held = v; v.state = 'idle'; v.path = null; v.target = null; v.fallFrom = null; v.spark.visible = false;
+      if (tribe.building?.builder === v) cancelBuild();
+      scene.attach(v.mesh); haptic(P, 0.5, 40); beep([660, 880], 0.06);
+    }
     return;
   }
-  if (tool === 'bolt') {
-    const h = voxelRay(P); if (!h) return;
-    if (tribe.mana < COST_BOLT) { event('Не хватает маны. Жителям нужна вера.'); return; }
-    tribe.mana -= COST_BOLT; lightning(h.x, h.z); haptic(P, 1, 120); dirty = true; return;
-  }
-  if (tool === 'rain') { P.rainAcc = 0; return; }
+  if (tool === 'rain') { P.rainAcc = 0.25; return; }
   const h = voxelRay(P); if (!h) return;
+  if (tool === 'bolt') {
+    if (tribe.mana < COST_BOLT) { event('Не хватает маны. Жителям нужна вера.'); return; }
+    tribe.mana -= COST_BOLT; lightning(h.c, h.x, h.z); haptic(P, 1, 120); dirty = true; return;
+  }
   if (tool === 'build') {
     const x = h.x + h.n[0], y = h.y + h.n[1], z = h.z + h.n[2];
-    if (!inB(x, y, z) || get(x, y, z)) return;
+    if (!inB(h.c, x, y, z) || get(h.c, x, y, z)) return;
     if (tribe.mana < COST_BLOCK) { event('Не хватает маны.'); return; }
-    tribe.mana -= COST_BLOCK; set(x, y, z, MATERIALS[matIdx][0]);
-    villagers.forEach(v => { if (!v.dead && Math.floor(v.x) === x && Math.floor(v.z) === z && v.y <= y + 0.5 && v.y > y - 1.5) v.y = y + 1; });
+    tribe.mana -= COST_BLOCK; set(h.c, x, y, z, MATERIALS[matIdx][0]);
+    villagers.forEach(v => { if (!v.dead && v.c === h.c && Math.floor(v.x) === x && Math.floor(v.z) === z && v.y <= y + 0.5 && v.y > y - 1.5) v.y = y + 1; });
     haptic(P, 0.3, 20); beep([440], 0.05, 'square', 0, 0.06);
   } else if (tool === 'dig') {
-    if (h.y === 0) { event('Это основание мира — его не разрушить.'); return; }
-    const b = get(h.x, h.y, h.z);
-    if (b === LOG) removeTree(h.x, h.z); else set(h.x, h.y, h.z, AIR);
+    if (h.y < 0) { event('Это настоящий стол — его не раскопать 🙂'); return; }
+    if (get(h.c, h.x, h.y, h.z) === LOG) removeTree(h.c, h.x, h.z); else set(h.c, h.x, h.y, h.z, AIR);
     checkHouses(); haptic(P, 0.4, 25); beep([220], 0.06, 'square', 0, 0.06);
   }
   dirty = true;
 }
 function onSelectEnd(P) {
   P.down = false;
-  if (P.held) {
-    const v = P.held; P.held = null; v.held = null;
-    const p = worldRoot.worldToLocal(v.mesh.getWorldPosition(new THREE.Vector3()));
-    v.x = Math.max(0.5, Math.min(W - 0.5, p.x / S + W / 2)); v.z = Math.max(0.5, Math.min(D - 0.5, p.z / S + D / 2));
-    v.y = Math.max(standY(Math.floor(v.x), Math.floor(v.z)), p.y / S); v.vy = 0; v.state = 'fall'; v.mesh.rotation.set(0, 0, 0);
-    if (!walkable(Math.floor(v.x), Math.floor(v.z))) { // упал на дерево/дом — сдвигаем на ближайшую свободную клетку
-      let best = null, bd = 1e9; for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) if (walkable(x, z)) { const d = Math.hypot(x + 0.5 - v.x, z + 0.5 - v.z); if (d < bd) { bd = d; best = [x, z]; } }
-      if (best) { v.x = best[0] + 0.5; v.z = best[1] + 0.5; }
-    }
-    if (v.y - standY(Math.floor(v.x), Math.floor(v.z)) < 2) tribe.faith += 0.5;
+  if (!P.held) return;
+  const v = P.held; P.held = null; v.held = null; v.mesh.rotation.set(0, 0, 0);
+  const wp = v.mesh.getWorldPosition(new THREE.Vector3());
+  // ищем ближайшую поверхность под точкой
+  let best = null, by = Infinity;
+  for (const c of chunks.values()) {
+    const l = c.group.worldToLocal(wp.clone());
+    if (l.x < 0 || l.z < 0 || l.x >= c.w * S || l.z >= c.dd * S || l.y < -0.03) continue;
+    if (l.y < by) { by = l.y; best = { c, l }; }
   }
+  if (!best) { killVillager(v, 'Житель упал за край мебели и потерялся…'); tribe.faith -= 5; beep([300, 150], 0.25, 'sawtooth'); return; }
+  const { c, l } = best;
+  v.c = c; c.group.add(v.mesh);
+  v.x = Math.max(0.5, Math.min(c.w - 0.5, l.x / S)); v.z = Math.max(0.5, Math.min(c.dd - 0.5, l.z / S));
+  if (!walkable(c, Math.floor(v.x), Math.floor(v.z))) {
+    let bc = null, bd = 1e9; for (let x = 0; x < c.w; x++) for (let z = 0; z < c.dd; z++) if (walkable(c, x, z)) { const d = Math.hypot(x + 0.5 - v.x, z + 0.5 - v.z); if (d < bd) { bd = d; bc = [x, z]; } }
+    if (bc) { v.x = bc[0] + 0.5; v.z = bc[1] + 0.5; }
+  }
+  v.y = Math.max(standY(c, Math.floor(v.x), Math.floor(v.z)), l.y / S); v.vy = 0; v.fallFrom = null; v.state = 'fall'; v.timer = 0.5;
+  placeVillagerMesh(v);
+  if (l.y < 0.06) tribe.faith += 0.5;
 }
 
 function updateInput(dt) {
   let hv = null; cursor.visible = false;
+  markPreview.visible = false; markDots.clear();
   for (const P of pointers) {
-    if (!P.src) { P.line.visible = false; continue; }
-    P.line.visible = true;
-    const ph = panelHit(P); P.line.scale.z = ph ? ph.dist : 2; if (ph?.btn) hv = ph.btn.id;
-    if (P === panelOwner || ph || !placed || placing) continue;
-    // курсор
-    if (tool === 'build' || tool === 'dig' || tool === 'rain' || tool === 'bolt') {
-      const h = voxelRay(P);
-      if (h) {
-        let { x, y, z } = h; if (tool === 'build') { x += h.n[0]; y += h.n[1]; z += h.n[2]; }
-        if (tool === 'rain' || tool === 'bolt') y = topY(x, z) - 1;
-        if (inB(x, y, z)) { cursor.position.copy(cellPos(x, y, z)); cursor.visible = true;
-          cursor.material.color.set(tool === 'dig' ? 0xff6b6b : tool === 'rain' ? 0x7fc8ff : tool === 'bolt' ? 0xffffff : 0xffd23f); }
-        // дождь
-        if (tool === 'rain' && P.down) {
-          P.rainAcc += dt;
-          if (P.rainAcc > 0.25) {
-            P.rainAcc = 0;
-            if (tribe.mana < 1) { event('Мана кончилась — дождь стих.'); P.down = false; }
-            else {
-              tribe.mana -= 1; spawnDrops(x + 0.5, z + 0.5); dirty = true;
-              if (Math.random() < 0.09) { for (let k = 0; k < 8; k++) if (plantTree(x + Math.round((Math.random() - 0.5) * 5), z + Math.round((Math.random() - 0.5) * 5))) { beep([700, 900], 0.08, 'sine'); break; } }
-              villagers.forEach(v => { if (!v.dead && !v.held && Math.hypot(v.x - x, v.z - z) < 4.5) { if (v.prayT <= 0 && v.state !== 'build') v.prayT = 2; tribe.faith += 0.25; } });
-            }
-          }
-        }
+    if (!P.src) { P.line.visible = false; P.tip.visible = false; continue; }
+    P.line.visible = true; P.tip.visible = phase === 'mark' && P !== panelOwner;
+    const ph = panelHit(P); P.line.scale.z = ph ? ph.dist : (phase === 'mark' && tool === 'add' ? 0.05 : 2); if (ph?.btn) hv = ph.btn.id;
+    if (P === panelOwner || !roomReady) continue;
+    if (phase === 'mark') {
+      if (tool === 'add' && markPts.length) {
+        markPts.forEach(p => { const m = new THREE.Mesh(dotGeo, dotMat); m.position.copy(p); markDots.add(m); });
+        const t = tipLocal(P), p0 = markPts[0];
+        if (markPts.length === 1) { setRect(markPreview, [p0.x, p0.z], [t.x, t.z], 0.004, (p0.y + t.y) / 2); markPreview.visible = true; }
+        else { const p1 = markPts[1], len = Math.hypot(p1.x - p0.x, p1.z - p0.z) || 1, nx = -(p1.z - p0.z) / len, nz = (p1.x - p0.x) / len;
+          setRect(markPreview, [p0.x, p0.z], [p1.x, p1.z], (t.x - p0.x) * nx + (t.z - p0.z) * nz, (p0.y + p1.y + t.y) / 3); markPreview.visible = true; }
       }
+      if (tool === 'del') { const sid = surfaceRay(P); surfViz.children.forEach(g => g.userData.fill.material = g.userData.fill.userData.sid === sid ? matSurfHover : matSurf); }
+      continue;
     }
-    // держим жителя
     if (P.held) {
-      P.g.updateMatrixWorld(true);
-      const p = worldRoot.worldToLocal(new THREE.Vector3().setFromMatrixPosition(P.g.matrixWorld));
-      P.held.mesh.position.set(p.x, p.y - S * 1.6, p.z); P.held.mesh.rotation.z = Math.sin(performance.now() / 120) * 0.4;
+      P.g.updateMatrixWorld(true); const gp = new THREE.Vector3().setFromMatrixPosition(P.g.matrixWorld);
+      P.held.mesh.position.set(gp.x, gp.y - S * 2, gp.z); P.held.mesh.rotation.z = Math.sin(performance.now() / 120) * 0.4;
+      continue;
+    }
+    if (ph || tool === 'grab') continue;
+    const h = voxelRay(P); if (!h) continue;
+    let { x, y, z } = h; if (tool === 'build') { x += h.n[0]; y += h.n[1]; z += h.n[2]; }
+    if (tool === 'rain' || tool === 'bolt') y = topY(h.c, x, z) - 1;
+    if (cursor.parent !== h.c.group) h.c.group.add(cursor);
+    cursor.position.copy(cellPos(x, Math.max(y, -0.5), z)); cursor.visible = inXZ(h.c, x, z) && y < CH;
+    cursor.material.color.set(tool === 'dig' ? 0xff6b6b : tool === 'rain' ? 0x7fc8ff : tool === 'bolt' ? 0xffffff : 0xffd23f);
+    if (tool === 'rain' && P.down) {
+      P.rainAcc += dt;
+      if (P.rainAcc > 0.25) {
+        P.rainAcc = 0;
+        if (tribe.mana < 1) { event('Мана кончилась — дождь стих.'); P.down = false; continue; }
+        tribe.mana -= 1; spawnDrops(h.c, x + 0.5, z + 0.5); dirty = true;
+        if (Math.random() < 0.1) for (let k = 0; k < 8; k++) if (plantTree(h.c, x + Math.round((Math.random() - 0.5) * 7), z + Math.round((Math.random() - 0.5) * 7))) { beep([700, 900], 0.08); break; }
+        villagers.forEach(v => { if (!v.dead && !v.held && v.c === h.c && Math.hypot(v.x - x, v.z - z) < 6) { if (v.prayT <= 0 && v.state !== 'build') v.prayT = 2; tribe.faith += 0.25; } });
+      }
     }
   }
   if (hv !== hoverId) { hoverId = hv; dirty = true; }
 }
 
 // =============== Симуляция ===============
-let saveT = 0, lastStatSec = -1;
+let saveT = 0, lastSec = -1;
 function simulate(dt) {
-  villagers.forEach(v => !v.dead && updateVillager(v, dt));
+  villagers.forEach(v => updateVillager(v, dt));
   if (villagers.some(v => v.dead)) villagers = villagers.filter(v => !v.dead);
   if (!villagers.length && tribe.eventT <= 0) event('Твой народ исчез… Нажми «Новый мир».');
   const pop = villagers.length, cap = 3 + tribe.houses.length * 2;
@@ -702,47 +806,46 @@ function simulate(dt) {
     tribe.popTimer = 0;
     if (pop > 0 && pop < cap) {
       const cand = [];
-      if (tribe.houses.length) tribe.houses.forEach(h => h.cells.forEach(([a, , b]) => adj4(a, b).forEach(c => cand.push(c))));
-      else villagers.forEach(o => adj4(Math.floor(o.x), Math.floor(o.z)).forEach(c => cand.push(c)));
-      const ok = cand.filter(([a, b]) => walkable(a, b));
-      const [sx, sz] = ok.length ? ok[Math.floor(Math.random() * ok.length)] : [-1, -1];
-      if (walkable(sx, sz)) { addVillager(sx + 0.5, sz + 0.5); event('Родился новый житель!'); beep([784, 988], 0.1, 'triangle'); }
+      if (tribe.houses.length) tribe.houses.forEach(h => { const c = chunks.get(h.cid); if (c) h.cells.forEach(([a, , b]) => adj4(a, b).forEach(([x, z]) => walkable(c, x, z) && cand.push([c, x, z]))); });
+      else villagers.forEach(o => adj4(Math.floor(o.x), Math.floor(o.z)).forEach(([x, z]) => walkable(o.c, x, z) && cand.push([o.c, x, z])));
+      if (cand.length) { const [c, x, z] = cand[Math.floor(Math.random() * cand.length)]; addVillager(c, x + 0.5, z + 0.5); event('Родился новый житель!'); beep([784, 988], 0.1, 'triangle'); }
     }
   }
-  if (Math.random() < dt * 0.04) { const x = Math.floor(Math.random() * W), z = Math.floor(Math.random() * D); plantTree(x, z); }
+  if (Math.random() < dt * 0.05 && chunks.size) {
+    const list = [...chunks.values()], tot = list.reduce((s, c) => s + c.area, 0); let r = Math.random() * tot;
+    const c = list.find(c => (r -= c.area) <= 0) || list[0]; plantTree(c, Math.floor(Math.random() * c.w), Math.floor(Math.random() * c.dd));
+  }
   if (tribe.eventT > 0) { tribe.eventT -= dt; if (tribe.eventT <= 0) dirty = true; }
-  const sec = Math.floor(performance.now() / 1000); if (sec !== lastStatSec) { lastStatSec = sec; dirty = true; }
+  const sec = Math.floor(performance.now() / 1000); if (sec !== lastSec) { lastSec = sec; dirty = true; }
   saveT += dt; if (saveT > 10) { saveT = 0; saveGame(); }
 }
 
-// =============== Якорь ===============
+// =============== Якорь комнаты ===============
+let anchor = null, needAnchor = false;
 function onSessionStart(session) {
-  placed = false; placing = false; anchor = null; pendingPose = null; worldRoot.visible = false; statusNote = '';
-  if (!loadGame()) { genWorld(); }
+  roomReady = false; anchorNote = ''; anchor = null; needAnchor = false;
+  roomRoot.matrix.identity(); roomRoot.matrixWorldNeedsUpdate = true; roomRoot.visible = false;
+  loadGame(); tool = phase === 'mark' ? 'add' : 'build'; markPts = []; rebuildSurfViz();
   const h = store.get(AKEY, null);
   if (h && session.restorePersistentAnchor) {
-    statusNote = 'Ищу твой стол…'; dirty = true;
-    session.restorePersistentAnchor(h).then(a => { anchor = a; placed = true; worldRoot.visible = true; statusNote = ''; dirty = true; event('С возвращением! Мир ждал тебя.'); })
-      .catch(() => { try { session.deletePersistentAnchor?.(h); } catch {} store.del(AKEY); statusNote = 'Не нашёл прошлое место. Положи контроллер в центр стола и нажми курок.'; dirty = true; });
-  }
+    session.restorePersistentAnchor(h).then(a => { anchor = a; roomReady = true; dirty = true; if (phase === 'world') event('С возвращением! Мир ждал тебя.'); })
+      .catch(() => { try { session.deletePersistentAnchor?.(h)?.catch?.(() => {}); } catch {} store.del(AKEY); needAnchor = true; if (surfaces.length) anchorNote = 'якорь потерян — проверь разметку'; dirty = true; });
+  } else needAnchor = true;
   setTimeout(() => { if (!panelOwner) detachPanel(); }, 600);
 }
 function handleAnchor(frame) {
-  const ref = renderer.xr.getReferenceSpace(), session = renderer.xr.getSession();
-  if (wantAnchor && pendingPose) {
-    wantAnchor = false;
-    const old = store.get(AKEY, null); if (old) { try { session.deletePersistentAnchor?.(old)?.catch?.(() => {}); } catch {} store.del(AKEY); }
+  const ref = renderer.xr.getReferenceSpace();
+  if (needAnchor) {
+    needAnchor = false;
     if (frame.createAnchor) {
-      const p = pendingPose;
-      frame.createAnchor(new XRRigidTransform({ x: p.pos.x, y: p.pos.y, z: p.pos.z }, { x: p.quat.x, y: p.quat.y, z: p.quat.z, w: p.quat.w }), ref)
-        .then(async a => { anchor = a; try { store.set(AKEY, await a.requestPersistentHandle()); } catch { statusNote = 'Якорь не сохранён — в след. раз поставь мир заново'; dirty = true; } })
-        .catch(() => { statusNote = 'Якоря недоступны — мир не запомнит место'; dirty = true; });
-    }
+      frame.createAnchor(new XRRigidTransform(), ref).then(async a => {
+        anchor = a; roomReady = true; dirty = true;
+        try { store.set(AKEY, await a.requestPersistentHandle()); } catch { anchorNote = 'без якоря'; }
+      }).catch(() => { roomReady = true; anchorNote = 'без якоря'; dirty = true; });
+    } else { roomReady = true; anchorNote = 'без якоря'; dirty = true; }
   }
-  if (anchor) {
-    const pose = frame.getPose(anchor.anchorSpace, ref);
-    if (pose) { worldRoot.matrix.fromArray(pose.transform.matrix); worldRoot.matrixWorldNeedsUpdate = true; worldRoot.updateMatrixWorld(true); }
-  }
+  if (anchor) { const pose = frame.getPose(anchor.anchorSpace, ref); if (pose) { roomRoot.matrix.fromArray(pose.transform.matrix); roomRoot.matrixWorldNeedsUpdate = true; roomRoot.updateMatrixWorld(true); } }
+  roomRoot.visible = roomReady;
 }
 
 // =============== Цикл ===============
@@ -752,9 +855,9 @@ renderer.setAnimationLoop((time, frame) => {
   if (!renderer.xr.isPresenting) return;
   if (frame) handleAnchor(frame);
   updateInput(dt);
-  if (placed) simulate(dt);
+  if (phase === 'world' && roomReady) simulate(dt);
   updateFx(dt);
-  if (worldDirty) rebuildBlocks();
+  for (const c of chunks.values()) if (c.dirty) rebuildChunk(c);
   if (dirty) drawPanel();
   renderer.render(scene, camera);
 });
@@ -764,7 +867,7 @@ const enterBtn = document.getElementById('enter'), msg = document.getElementById
 (async () => {
   if (!navigator.xr) { enterBtn.textContent = 'MR недоступен'; msg.textContent = 'Открой страницу в браузере Quest 3 по https-ссылке.'; return; }
   try {
-    if (await navigator.xr.isSessionSupported('immersive-ar')) { enterBtn.disabled = false; enterBtn.textContent = 'Войти в мир'; }
+    if (await navigator.xr.isSessionSupported('immersive-ar')) { enterBtn.disabled = false; enterBtn.textContent = 'Войти'; }
     else { enterBtn.textContent = 'MR недоступен'; msg.textContent = 'Нужен Quest Browser (immersive-ar).'; }
   } catch (e) { enterBtn.textContent = 'MR недоступен'; msg.textContent = e.message; }
 })();
@@ -774,10 +877,10 @@ enterBtn.onclick = async () => {
     const session = await navigator.xr.requestSession('immersive-ar', { requiredFeatures: ['local-floor'], optionalFeatures: ['anchors', 'hand-tracking'] });
     await renderer.xr.setSession(session);
     onSessionStart(session);
-    session.addEventListener('end', () => { saveGame(); drawMap(); });
+    session.addEventListener('end', () => { saveGame(); drawPlan(); });
   } catch (e) { msg.textContent = 'Не удалось запустить: ' + e.message; }
 };
-addEventListener('visibilitychange', () => { if (document.hidden && placed) saveGame(); });
+addEventListener('visibilitychange', () => { if (document.hidden && renderer.xr.isPresenting) saveGame(); });
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 </script>
 </body>
